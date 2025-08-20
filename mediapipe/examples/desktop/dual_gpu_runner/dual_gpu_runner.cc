@@ -11,29 +11,50 @@
 #include "mediapipe/gpu/gpu_service.h"
 #include "mediapipe/gpu/gl_context.h"
 #include "mediapipe/framework/port/logging.h"
+#include <GLES3/gl3.h>
 
 // --- Helpers to load extension entry points ---
 static PFNEGLQUERYDEVICESEXTPROC eglQueryDevicesEXT = nullptr;
 static PFNEGLGETPLATFORMDISPLAYEXTPROC eglGetPlatformDisplayEXT = nullptr;
 
+// dont link the zink vulkan
+static PFNEGLQUERYDEVICESTRINGEXTPROC eglQueryDeviceStringEXT = nullptr;
+
 bool LoadEGLExtensions() {
-  eglQueryDevicesEXT =
+  eglQueryDevicesEXT = // gives list of physical GPUs exposed to EGL
       (PFNEGLQUERYDEVICESEXTPROC)eglGetProcAddress("eglQueryDevicesEXT");
-  eglGetPlatformDisplayEXT =
+  eglGetPlatformDisplayEXT = // open eglld display on specific GPU instead of default
       (PFNEGLGETPLATFORMDISPLAYEXTPROC)eglGetProcAddress("eglGetPlatformDisplayEXT");
+  eglQueryDeviceStringEXT = (PFNEGLQUERYDEVICESTRINGEXTPROC)eglGetProcAddress("eglQueryDeviceStringEXT");
   return eglQueryDevicesEXT && eglGetPlatformDisplayEXT;
 }
 
-struct GpuCtx {
-  EGLDeviceEXT dev = nullptr;
-  EGLDisplay dpy = EGL_NO_DISPLAY;
-  EGLContext ctx = EGL_NO_CONTEXT;
-  EGLSurface surf = EGL_NO_SURFACE;
+// helper function
+auto is_hw_device = [](EGLDeviceEXT d) -> bool {
+  if (!eglQueryDeviceStringEXT) return true;
+  const char* vendor = eglQueryDeviceStringEXT(d, EGL_VENDOR);
+  const char* exts = eglQueryDeviceStringEXT(d, EGL_EXTENSIONS);
+  auto has = [](const char* s, const char* sub){
+    return s && std::string(s).find(sub) != std::string::npos;
+  };
+  // reject zink paths
+  if (has(vendor, "zink") || has(exts, "ZINK")) {
+    return false;
+  }
+  return true;
+};
+
+struct GpuCtx { // representing 1 GPU context
+  EGLDeviceEXT dev = nullptr; //physical GPU handle
+  EGLDisplay dpy = EGL_NO_DISPLAY; // egld display object bound to that GPU
+  EGLContext ctx = EGL_NO_CONTEXT; //opengl es context
+  EGLSurface surf = EGL_NO_SURFACE; // tiny pbuffer surface used to make context current
 };
 
 absl::StatusOr<GpuCtx> MakeHeadlessES3Context(EGLDeviceEXT dev) {
   GpuCtx gc; gc.dev = dev;
-
+  
+  // open display on that device
   gc.dpy = eglGetPlatformDisplayEXT(EGL_PLATFORM_DEVICE_EXT, dev, nullptr);
   if (gc.dpy == EGL_NO_DISPLAY) return absl::UnknownError("No EGLDisplay");
 
@@ -64,18 +85,33 @@ absl::StatusOr<GpuCtx> MakeHeadlessES3Context(EGLDeviceEXT dev) {
   return gc;
 }
 
-absl::Status RunGraphOn(const GpuCtx& gc,
-                        const mediapipe::CalculatorGraphConfig& cfg) {
-  // Make this context current on *this* thread.
-  if (!eglMakeCurrent(gc.dpy, gc.surf, gc.surf, gc.ctx))
-    return absl::UnknownError("eglMakeCurrent failed");
+absl::Status RunGraphOn(const GpuCtx& gc, const mediapipe::CalculatorGraphConfig& cfg) {
+  // bind the context to this thread
+  if (!eglMakeCurrent(gc.dpy, gc.surf, gc.surf, gc.ctx)){
+    return absl::UnknownError("eglMakeCurrent failed.");
+  }
 
-  using PlatformGlContext = mediapipe::GlContext::PlatformGlContext;
-
-  // Construct GpuResources from an *external* EGLContext and install it
+  // verify that we have opengl es and >= 3.1
+  const char* ver_c = reinterpret_cast<const char*>(glGetString(GL_VERSION));
+  if(!ver_c) return absl::UnknownError("glGetString version is null.");
+  std::string ver = ver_c;
+  if(ver.find("OpenGL ES") == std::string::npos) {
+    return absl::InvalidArgumentError("Not an OpenGL ES context. " + ver);
+  }
+  int max = 0, min = 0;
+  sscanf(ver.c_str(), "OpenGL ES %d.%d", &max, &min);
+  if(!(max >3 || (max == 3 && min >= 1))){
+    return absl::InvalidArgumentError("Need ES 3.1+, got: " + ver);
+  }
+  
+  // Construct GpuResources from an external EGLContext and install it
   // as the graph's GPU service (kGpuService).
-  auto gpu_res = std::make_shared<mediapipe::GpuResources>(
-      (PlatformGlContext)gc.ctx);
+  auto gpu_res_or = mediapipe::GpuResources::Create(
+    static_cast<mediapipe::PlatformGlContext>(gc.ctx)
+  );
+
+  if (!gpu_res_or.ok()) return gpu_res_or.status();
+  std::shared_ptr<mediapipe::GpuResources> gpu_res = *gpu_res_or;
 
   mediapipe::CalculatorGraph graph;
   // Either SetServiceObject(kGpuService, ...) or SetGpuResources(...) depending on version.
@@ -101,14 +137,29 @@ int main(int argc, char** argv) {
 
   // 1) Enumerate devices
   EGLDeviceEXT devices[8]; EGLint ndev = 0;
-  if (!eglQueryDevicesEXT(8, devices, &ndev) || ndev < 2) {
-    std::cerr << "Need >= 2 EGL devices (found " << ndev << ")\n";
+  if (!eglQueryDevicesEXT(8, devices, &ndev) || ndev < 1) {
+    std::cerr << "No EGL devices found\n";
     return 1;
   }
 
+  std::vector<EGLDeviceEXT> hw;
+  for (int i = 0; i < ndev; ++i){
+    if (is_hw_device(devices[i])){
+      hw.push_back(devices[i]);
+    }
+  }
+  if (hw.empty()) {
+    std::cerr << "No usable hardware egl devices.\n";
+    return 1;
+  }
+
+  // fallback for testing, if only 1 GPU is availble, it will run both on it
+  EGLDeviceEXT dev0 = hw[0];
+  EGLDeviceEXT dev1 = (hw.size() >=2 ? hw[1] : hw[0]);
+
   // 2) Create one context per GPU
-  auto gc0_or = MakeHeadlessES3Context(devices[0]);
-  auto gc1_or = MakeHeadlessES3Context(devices[1]);
+  auto gc0_or = MakeHeadlessES3Context(dev0);
+  auto gc1_or = MakeHeadlessES3Context(dev1);
   if (!gc0_or.ok() || !gc1_or.ok()) {
     std::cerr << "Context creation failed\n";
     return 1;
