@@ -187,12 +187,20 @@ bzl_library(
 # Note: this determines the order in which the libraries are passed to the
 # linker, so if library A depends on library B, library B must come _after_.
 # Hence core is at the bottom.
+# OPENCV_MODULES = [
+#     "calib3d",
+#     "features2d",
+#     "highgui",
+#     "video",
+#     "videoio",
+#     "imgcodecs",
+#     "imgproc",
+#     "core",
+# ]
+
 OPENCV_MODULES = [
     "calib3d",
     "features2d",
-    "highgui",
-    "video",
-    "videoio",
     "imgcodecs",
     "imgproc",
     "core",
@@ -267,16 +275,13 @@ cmake(
         "-lz",
         "-ltiff",
         "-lImath",
-        "-lIlmImf",
         "-lIex",
-        "-lHalf",
         "-lIlmThread",
         "-ldc1394",
         "-lavcodec",
         "-lavformat",
         "-lavutil",
         "-lswscale",
-        "-lavresample",
         "-ldl",
         "-lm",
         "-lpthread",

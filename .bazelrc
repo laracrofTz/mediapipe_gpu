@@ -23,6 +23,10 @@ build:android --cxxopt=-std=c++17
 build:android --host_cxxopt=-std=c++17
 
 # Linux
+build:linux --define=MEDIAPIPE_DISABLE_GPU=0
+build:linux --copt=-DMEDIAPIPE_OMIT_EGL_WINDOW_BIT
+build:linux --copt=-DMESA_EGL_NO_X11_HEADERS
+build:linux --copt=-DEGL_NO_X11
 build:linux --cxxopt=-std=c++17
 build:linux --host_cxxopt=-std=c++17
 build:linux --copt=-w

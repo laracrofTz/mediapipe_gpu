@@ -42,6 +42,7 @@ MP_ROOT_INIT_PY = os.path.join(MP_ROOT_PATH, '__init__.py')
 GPU_OPTIONS_DISBALED = ['--define=MEDIAPIPE_DISABLE_GPU=1']
 
 GPU_OPTIONS_ENBALED = [
+    '--define=MEDIAPIPE_DISABLE_GPU=0',
     '--copt=-DTFLITE_GPU_EXTRA_GLES_DEPS',
     '--copt=-DMEDIAPIPE_OMIT_EGL_WINDOW_BIT',
     '--copt=-DMESA_EGL_NO_X11_HEADERS',
@@ -53,6 +54,8 @@ if IS_MAC:
   )
 
 GPU_OPTIONS = GPU_OPTIONS_DISBALED if MP_DISABLE_GPU else GPU_OPTIONS_ENBALED
+
+MP_VERSION = os.environ.get("MEDIAPIPE_PY_VERSION", "0.10.21.dev0")
 
 
 def _normalize_path(path):
@@ -520,7 +523,7 @@ class Restore(setuptools.Command):
 
 setuptools.setup(
     name='mediapipe',
-    version=__version__,
+    version=MP_VERSION, #__version__,
     url='https://github.com/google/mediapipe',
     description='MediaPipe is the simplest way for researchers and developers to build world-class ML solutions and applications for mobile, edge, cloud and the web.',
     author='The MediaPipe Authors',

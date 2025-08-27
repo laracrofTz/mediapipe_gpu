@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <utility>
+#include <cstdlib>
 
 #include "absl/log/absl_check.h"
 #include "absl/log/absl_log.h"
@@ -38,7 +39,7 @@ namespace {
 static pthread_key_t egl_release_thread_key;
 static pthread_once_t egl_release_key_once = PTHREAD_ONCE_INIT;
 
-static void EglThreadExitCallback(void* key_value) {
+static void EglThreadExitCallback(void* key_value) { // runs when GL thread is exiting
   EGLDisplay current_display = eglGetCurrentDisplay();
   if (current_display != EGL_NO_DISPLAY) {
     // Some implementations have chosen to allow EGL_NO_DISPLAY as a valid
@@ -88,9 +89,33 @@ static absl::StatusOr<EGLDisplay> GetInitializedDefaultEglDisplay() {
   return display;
 }
 
-static absl::StatusOr<EGLDisplay> GetInitializedEglDisplay() {
-  auto status_or_display = GetInitializedDefaultEglDisplay();
-  return status_or_display;
+static absl::StatusOr<EGLDisplay> GetDeviceDisplayFromEnv(){
+  const char* env = std::getenv("MEDIAPIPE_EGL_DEVICE_INDEX");
+  if (!env || !*env){
+    return mediapipe::UnknownErrorBuilder(MEDIAPIPE_LOC) << "NO ENV";
+  }
+  
+}
+
+static absl::StatusOr<EGLDisplay> GetInitializedEglDisplay(EGLContext share_context) {
+  // auto status_or_display = GetInitializedDefaultEglDisplay();
+  // return status_or_display;
+  EGLContext current_ctx = eglGetCurrentContext();
+
+  if (current_ctx != EGL_NO_CONTEXT) {
+    EGLDisplay cur = eglGetCurrentDisplay();
+    if (current_ctx != EGL_NO_DISPLAY) {
+      return cur; 
+    }
+  }
+
+  if (share_context != EGL_NO_CONTEXT){
+    EGLDisplay current_disp = eglGetCurrentDisplay();
+    if(current_disp != EGL_NO_DISPLAY && eglGetCurrentContext() == share_context) {
+      return current_disp;
+    }
+  }
+  return GetInitializedDefaultEglDisplay(); 
 }
 
 }  // namespace
@@ -137,6 +162,8 @@ absl::Status GlContext::CreateContextInternal(EGLContext share_context,
       // clang-format on
   };
 
+  RET_CHECK(eglBindAPI(EGL_OPENGL_ES_API) == EGL_TRUE); // bind gles api before choosing configs
+
   // TODO: improve config selection.
   EGLint num_configs;
   EGLBoolean success =
@@ -177,16 +204,26 @@ absl::Status GlContext::CreateContextInternal(EGLContext share_context,
 }
 
 absl::Status GlContext::CreateContext(EGLContext share_context) {
-  MP_ASSIGN_OR_RETURN(display_, GetInitializedEglDisplay());
+  MP_ASSIGN_OR_RETURN(display_, GetInitializedEglDisplay(share_context)); //pick a display first
 
-  auto status = CreateContextInternal(share_context, 3);
-  if (!status.ok()) {
-    ABSL_LOG(WARNING) << "Creating a context with OpenGL ES 3 failed: "
-                      << status;
-    ABSL_LOG(WARNING) << "Fall back on OpenGL ES 2.";
-    status = CreateContextInternal(share_context, 2);
+  // if sharing, query and use that es major exactly, no cross versions fallback
+  int share_es = 0;
+  if(share_context != EGL_NO_CONTEXT){
+    eglQueryContext(display_, share_context, EGL_CONTEXT_CLIENT_VERSION, &share_es);
   }
-  MP_RETURN_IF_ERROR(status);
+  if (share_es == 2 || share_es == 3){
+    MP_RETURN_IF_ERROR(CreateContextInternal(share_context, share_es));
+  }
+  else{
+    auto status = CreateContextInternal(share_context, 3);
+    if (!status.ok()) {
+      ABSL_LOG(WARNING) << "Creating a context with OpenGL ES 3 failed: "
+                        << status;
+      ABSL_LOG(WARNING) << "Fall back on OpenGL ES 2.";
+      status = CreateContextInternal(share_context, 2);
+    }
+    MP_RETURN_IF_ERROR(status);
+  }
 
   EGLint pbuffer_attr[] = {EGL_WIDTH, 1, EGL_HEIGHT, 1, EGL_NONE};
 
