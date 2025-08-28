@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
+#include <GLES3/gl3.h>
+
 #include <utility>
 
 #include "absl/log/absl_check.h"
@@ -37,6 +41,9 @@ namespace {
 
 static pthread_key_t egl_release_thread_key;
 static pthread_once_t egl_release_key_once = PTHREAD_ONCE_INIT;
+
+static PFNEGLQUERYDEVICESEXTPROC eglQueryDevicesEXT = nullptr;
+static PFNEGLGETPLATFORMDISPLAYEXTPROC eglGetPlatformDisplayEXT = nullptr;
 
 static void EglThreadExitCallback(void* key_value) {
   EGLDisplay current_display = eglGetCurrentDisplay();
@@ -73,7 +80,31 @@ static void EnsureEglThreadRelease() {
 }
 
 static absl::StatusOr<EGLDisplay> GetInitializedDefaultEglDisplay() {
-  EGLDisplay display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+  // EGLDisplay display = eglGetDisplay(EGL_DEFAULT_DISPLAY); // original code
+  // change to another gpu device here
+  eglQueryDevicesEXT =
+        (PFNEGLQUERYDEVICESEXTPROC) eglGetProcAddress("eglQueryDevicesEXT");
+  if (!eglQueryDevicesEXT) {
+    // printf("ERROR: extension eglQueryDevicesEXT not available.");
+    // return(-1);
+    ABSL_LOG(ERROR) << "extension eglQueryDevicesEXT not available.";
+  }
+
+  eglGetPlatformDisplayEXT =
+         (PFNEGLGETPLATFORMDISPLAYEXTPROC)eglGetProcAddress("eglGetPlatformDisplayEXT");
+  if (!eglGetPlatformDisplayEXT) {
+    // printf("ERROR: extension eglGetPlatformDisplayEXT not available.");
+    // return(-1);
+    ABSL_LOG(ERROR) << "extension eglGetPlatformDisplayEXT not available.";
+  }
+
+  static const int MAX_DEVICES = 2;
+  EGLDeviceEXT devices[MAX_DEVICES];
+  EGLint numDevices;
+
+  eglQueryDevicesEXT(MAX_DEVICES, devices, &numDevices);
+  EGLDisplay display = eglGetPlatformDisplayEXT(EGL_PLATFORM_DEVICE_EXT, devices[1], 0);
+  
   RET_CHECK(display != EGL_NO_DISPLAY)
       << "eglGetDisplay() returned error " << std::showbase << std::hex
       << eglGetError();

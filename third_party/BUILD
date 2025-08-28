@@ -190,9 +190,9 @@ bzl_library(
 OPENCV_MODULES = [
     "calib3d",
     "features2d",
-    "highgui",
-    "video",
-    "videoio",
+    # "highgui",
+    # "video",
+    # "videoio",
     "imgcodecs",
     "imgproc",
     "core",
@@ -202,7 +202,7 @@ OPENCV_MODULES = [
 # still only builds the shared libraries, so we have to choose one or the
 # other. We build shared libraries by default, but this variable can be used
 # to switch to static libraries.
-OPENCV_SHARED_LIBS = True
+OPENCV_SHARED_LIBS = False
 
 OPENCV_SO_VERSION = "3.4"
 
@@ -267,16 +267,16 @@ cmake(
         "-lz",
         "-ltiff",
         "-lImath",
-        "-lIlmImf",
+        # "-lIlmImf",
         "-lIex",
-        "-lHalf",
+        # "-lHalf",
         "-lIlmThread",
         "-ldc1394",
         "-lavcodec",
         "-lavformat",
         "-lavutil",
         "-lswscale",
-        "-lavresample",
+        # "-lavresample",
         "-ldl",
         "-lm",
         "-lpthread",
@@ -310,7 +310,7 @@ alias(
     }),
 )
 
-# When "--define EXCLUDE_OPENCV_SO_LIB=1" is set in the build command,
+# When "--define EXCLUDE_OPENCV_SO_LIB=1" is set in the build command, --> tried to enable this but still error
 # the OpenCV so libraries will be excluded from the AAR package to
 # save the package size.
 config_setting(
