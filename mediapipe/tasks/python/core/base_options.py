@@ -58,6 +58,7 @@ class BaseOptions:
   model_asset_path: Optional[str] = None
   model_asset_buffer: Optional[bytes] = None
   delegate: Optional[Delegate] = None
+  gpu_device_index: Optional[int] = None 
 
   @doc_controls.do_not_generate_docs
   def to_pb2(self) -> _BaseOptionsProto:
@@ -86,6 +87,7 @@ class BaseOptions:
             file_name=full_path, file_content=self.model_asset_buffer
         ),
         acceleration=acceleration_proto,
+        gpu_device_index=self.gpu_device_index if self.gpu_device_index is not None else -1,
     )
 
   @classmethod
@@ -104,6 +106,7 @@ class BaseOptions:
         model_asset_path=pb2_obj.model_asset.file_name,
         model_asset_buffer=pb2_obj.model_asset.file_content,
         delegate=delegate,
+        gpu_device_index=pb2_obj.gpu_device_index if pb2_obj.HasField("gpu_device_index") else None,
     )
 
   def __eq__(self, other: Any) -> bool:

@@ -42,6 +42,15 @@ namespace {
 static pthread_key_t egl_release_thread_key;
 static pthread_once_t egl_release_key_once = PTHREAD_ONCE_INIT;
 
+// Thread-local GPU selection 
+// -1  => use platform default (EGL_DEFAULT_DISPLAY)
+// >=0 => use EGL_PLATFORM_DEVICE_EXT with that device index
+static thread_local int tl_egl_device_index = -1;
+
+void SetThreadLocalEglDeviceIndex(int index) {
+  tl_egl_device_index = index;
+}
+
 static PFNEGLQUERYDEVICESEXTPROC eglQueryDevicesEXT = nullptr;
 static PFNEGLGETPLATFORMDISPLAYEXTPROC eglGetPlatformDisplayEXT = nullptr;
 
@@ -82,28 +91,65 @@ static void EnsureEglThreadRelease() {
 static absl::StatusOr<EGLDisplay> GetInitializedDefaultEglDisplay() {
   // EGLDisplay display = eglGetDisplay(EGL_DEFAULT_DISPLAY); // original code
   // change to another gpu device here
-  eglQueryDevicesEXT =
-        (PFNEGLQUERYDEVICESEXTPROC) eglGetProcAddress("eglQueryDevicesEXT");
-  if (!eglQueryDevicesEXT) {
-    // printf("ERROR: extension eglQueryDevicesEXT not available.");
-    // return(-1);
-    ABSL_LOG(ERROR) << "extension eglQueryDevicesEXT not available.";
+  // eglQueryDevicesEXT =
+  //       (PFNEGLQUERYDEVICESEXTPROC) eglGetProcAddress("eglQueryDevicesEXT");
+  // if (!eglQueryDevicesEXT) {
+  //   // printf("ERROR: extension eglQueryDevicesEXT not available.");
+  //   // return(-1);
+  //   ABSL_LOG(ERROR) << "extension eglQueryDevicesEXT not available.";
+  // }
+
+  // eglGetPlatformDisplayEXT =
+  //        (PFNEGLGETPLATFORMDISPLAYEXTPROC)eglGetProcAddress("eglGetPlatformDisplayEXT");
+  // if (!eglGetPlatformDisplayEXT) {
+  //   // printf("ERROR: extension eglGetPlatformDisplayEXT not available.");
+  //   // return(-1);
+  //   ABSL_LOG(ERROR) << "extension eglGetPlatformDisplayEXT not available.";
+  // }
+
+  // static const int MAX_DEVICES = 2;
+  // EGLDeviceEXT devices[MAX_DEVICES];
+  // EGLint numDevices;
+
+  // eglQueryDevicesEXT(MAX_DEVICES, devices, &numDevices);
+  // EGLDisplay display = eglGetPlatformDisplayEXT(EGL_PLATFORM_DEVICE_EXT, devices[1], 0);
+
+  EGLDisplay display = EGL_NO_DISPLAY;
+  if (tl_egl_device_index >= 0) {
+    // Use EGL device extensions to select a specific GPU for THIS THREAD.
+    pfn_eglQueryDevicesEXT = reinterpret_cast<PFNEGLQUERYDEVICESEXTPROC>(
+        eglGetProcAddress("eglQueryDevicesEXT"));
+    pfn_eglGetPlatformDisplayEXT =
+        reinterpret_cast<PFNEGLGETPLATFORMDISPLAYEXTPROC>(
+            eglGetProcAddress("eglGetPlatformDisplayEXT"));
+
+    if (!pfn_eglQueryDevicesEXT || !pfn_eglGetPlatformDisplayEXT) {
+      ABSL_LOG(ERROR) << "EGL device extensions not available; "
+                      << "falling back to EGL_DEFAULT_DISPLAY.";
+    } else {
+      EGLDeviceEXT devices[32];
+      EGLint num_devices = 0;
+      if (!pfn_eglQueryDevicesEXT(32, devices, &num_devices) ||
+          tl_egl_device_index >= num_devices) {
+        ABSL_LOG(ERROR) << absl::StrFormat(
+            "Requested EGL device %d out of range (found %d). "
+            "Falling back to EGL_DEFAULT_DISPLAY.",
+            tl_egl_device_index, num_devices);
+      } else {
+        display = pfn_eglGetPlatformDisplayEXT(
+            EGL_PLATFORM_DEVICE_EXT, (void*)devices[tl_egl_device_index], nullptr);
+        if (display == EGL_NO_DISPLAY) {
+          ABSL_LOG(ERROR) << "eglGetPlatformDisplayEXT failed; "
+                          << "falling back to EGL_DEFAULT_DISPLAY.";
+        }
+      }
+    }
   }
 
-  eglGetPlatformDisplayEXT =
-         (PFNEGLGETPLATFORMDISPLAYEXTPROC)eglGetProcAddress("eglGetPlatformDisplayEXT");
-  if (!eglGetPlatformDisplayEXT) {
-    // printf("ERROR: extension eglGetPlatformDisplayEXT not available.");
-    // return(-1);
-    ABSL_LOG(ERROR) << "extension eglGetPlatformDisplayEXT not available.";
+  // use platform default
+  if (display == EGL_NO_DISPLAY) {
+    display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
   }
-
-  static const int MAX_DEVICES = 2;
-  EGLDeviceEXT devices[MAX_DEVICES];
-  EGLint numDevices;
-
-  eglQueryDevicesEXT(MAX_DEVICES, devices, &numDevices);
-  EGLDisplay display = eglGetPlatformDisplayEXT(EGL_PLATFORM_DEVICE_EXT, devices[1], 0);
   
   RET_CHECK(display != EGL_NO_DISPLAY)
       << "eglGetDisplay() returned error " << std::showbase << std::hex

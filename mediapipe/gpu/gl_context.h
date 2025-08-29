@@ -77,6 +77,8 @@ namespace mediapipe {
 typedef std::function<void()> GlVoidFunction;
 typedef std::function<absl::Status()> GlStatusFunction;
 
+void SetThreadLocalEglDeviceIndex(int index);
+
 class GlContext;
 // TODO: remove after glWaitSync crashes are resolved.
 class GlSyncWrapper;
