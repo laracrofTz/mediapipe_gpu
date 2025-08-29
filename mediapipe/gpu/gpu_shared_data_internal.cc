@@ -93,16 +93,18 @@ static const std::string& SharedContextKey() {
   return *kSharedContextKey;
 }
 
-GpuResources::StatusOrGpuResources GpuResources::Create() {
-  return Create(kPlatformGlContextNone);
+GpuResources::StatusOrGpuResources GpuResources::Create(int gpu_device) {
+  return Create(kPlatformGlContextNone, /*gpu_buffer_pool_options=*/nullptr,
+                gpu_device);
 }
 
 GpuResources::StatusOrGpuResources GpuResources::Create(
     PlatformGlContext external_context,
-    const MultiPoolOptions* gpu_buffer_pool_options) {
+    const MultiPoolOptions* gpu_buffer_pool_options, int gpu_device) {
   MP_ASSIGN_OR_RETURN(
       std::shared_ptr<GlContext> context,
-      GlContext::Create(external_context, kGlContextUseDedicatedThread));
+      GlContext::Create(external_context, kGlContextUseDedicatedThread,
+                        gpu_device));
   std::shared_ptr<GpuResources> gpu_resources(
       new GpuResources(std::move(context), gpu_buffer_pool_options));
   return gpu_resources;
@@ -110,9 +112,9 @@ GpuResources::StatusOrGpuResources GpuResources::Create(
 
 GpuResources::StatusOrGpuResources GpuResources::Create(
     const GpuResources& gpu_resources,
-    const MultiPoolOptions* gpu_buffer_pool_options) {
+    const MultiPoolOptions* gpu_buffer_pool_options, int gpu_device) {
   return Create(gpu_resources.gl_context()->native_context(),
-                gpu_buffer_pool_options);
+                gpu_buffer_pool_options, gpu_device);
 }
 
 GpuResources::GpuResources(std::shared_ptr<GlContext> gl_context,

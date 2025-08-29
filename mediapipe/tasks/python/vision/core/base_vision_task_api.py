@@ -43,6 +43,7 @@ class BaseVisionTaskApi(object):
       packet_callback: Optional[
           Callable[[Mapping[str, packet_module.Packet]], None]
       ] = None,
+      gpu_device: int = -1,
   ) -> None:
     """Initializes the `BaseVisionTaskApi` object.
 
@@ -67,7 +68,7 @@ class BaseVisionTaskApi(object):
           'The vision task is in image or video mode, a user-defined result '
           'callback should not be provided.'
       )
-    self._runner = _TaskRunner.create(graph_config, packet_callback)
+    self._runner = _TaskRunner.create(graph_config, packet_callback, gpu_device)
     self._running_mode = running_mode
 
   def _process_image_data(

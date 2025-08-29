@@ -361,6 +361,16 @@ class HandLandmarker(base_vision_task_api.BaseVisionTaskApi):
         ],
         task_options=options,
     )
+    gpu_device_id = -1
+    if options.base_options and options.base_options.gpu_device is not None:
+        device = options.base_options.gpu_device
+        try:
+            if isinstance(device, str):
+                gpu_device_id = int(device.split(":")[1]) if ":" in device else int(device)
+            else:
+                gpu_device_id = int(device)
+        except ValueError:
+            gpu_device_id = -1
     return cls(
         task_info.generate_graph_config(
             enable_flow_limiting=options.running_mode
@@ -368,6 +378,7 @@ class HandLandmarker(base_vision_task_api.BaseVisionTaskApi):
         ),
         options.running_mode,
         packets_callback if options.result_callback else None,
+        gpu_device_id,
     )
 
   def detect(

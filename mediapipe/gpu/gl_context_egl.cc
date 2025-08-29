@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <utility>
+#include <vector>
 
 #include "absl/log/absl_check.h"
 #include "absl/log/absl_log.h"
@@ -22,6 +23,7 @@
 #include "mediapipe/framework/port/ret_check.h"
 #include "mediapipe/framework/port/status.h"
 #include "mediapipe/framework/port/status_builder.h"
+#include "mediapipe/gpu/egl_base.h"
 #include "mediapipe/gpu/gl_context.h"
 #include "mediapipe/gpu/gl_context_internal.h"
 
@@ -88,26 +90,59 @@ static absl::StatusOr<EGLDisplay> GetInitializedDefaultEglDisplay() {
   return display;
 }
 
-static absl::StatusOr<EGLDisplay> GetInitializedEglDisplay() {
-  auto status_or_display = GetInitializedDefaultEglDisplay();
-  return status_or_display;
+static absl::StatusOr<EGLDisplay> GetInitializedEglDisplay(int device) {
+  if (device < 0) {
+    return GetInitializedDefaultEglDisplay();
+  }
+  auto eglQueryDevicesEXT =
+      reinterpret_cast<PFNEGLQUERYDEVICESEXTPROC>(
+          eglGetProcAddress("eglQueryDevicesEXT"));
+  auto eglGetPlatformDisplayEXT =
+      reinterpret_cast<PFNEGLGETPLATFORMDISPLAYEXTPROC>(
+          eglGetProcAddress("eglGetPlatformDisplayEXT"));
+  RET_CHECK(eglQueryDevicesEXT && eglGetPlatformDisplayEXT)
+      << "EGL device enumeration not supported";
+  EGLint num_devices = 0;
+  eglQueryDevicesEXT(0, nullptr, &num_devices);
+  RET_CHECK_GT(num_devices, device)
+      << "GPU device index out of range";
+  std::vector<EGLDeviceEXT> devices(num_devices);
+  eglQueryDevicesEXT(num_devices, devices.data(), &num_devices);
+  EGLDisplay display =
+      eglGetPlatformDisplayEXT(EGL_PLATFORM_DEVICE_EXT,
+                               devices[device], nullptr);
+  RET_CHECK(display != EGL_NO_DISPLAY)
+      << "eglGetPlatformDisplayEXT() returned error " << std::showbase
+      << std::hex << eglGetError();
+
+  EGLint major = 0;
+  EGLint minor = 0;
+  EGLBoolean egl_initialized = eglInitialize(display, &major, &minor);
+  RET_CHECK(egl_initialized) << "Unable to initialize EGL";
+  ABSL_LOG(INFO) << "Successfully initialized EGL. Major : " << major
+                 << " Minor: " << minor;
+  return display;
 }
 
 }  // namespace
 
 GlContext::StatusOrGlContext GlContext::Create(std::nullptr_t nullp,
-                                               bool create_thread) {
-  return Create(EGL_NO_CONTEXT, create_thread);
+                                               bool create_thread,
+                                               int gpu_device) {
+  return Create(EGL_NO_CONTEXT, create_thread, gpu_device);
 }
 
 GlContext::StatusOrGlContext GlContext::Create(const GlContext& share_context,
-                                               bool create_thread) {
-  return Create(share_context.context_, create_thread);
+                                               bool create_thread,
+                                               int gpu_device) {
+  return Create(share_context.context_, create_thread, gpu_device);
 }
 
 GlContext::StatusOrGlContext GlContext::Create(EGLContext share_context,
-                                               bool create_thread) {
+                                               bool create_thread,
+                                               int gpu_device) {
   std::shared_ptr<GlContext> context(new GlContext());
+  context->gpu_device_ = gpu_device;
   MP_RETURN_IF_ERROR(context->CreateContext(share_context));
   MP_RETURN_IF_ERROR(context->FinishInitialization(create_thread));
   return std::move(context);
@@ -177,7 +212,7 @@ absl::Status GlContext::CreateContextInternal(EGLContext share_context,
 }
 
 absl::Status GlContext::CreateContext(EGLContext share_context) {
-  MP_ASSIGN_OR_RETURN(display_, GetInitializedEglDisplay());
+  MP_ASSIGN_OR_RETURN(display_, GetInitializedEglDisplay(gpu_device_));
 
   auto status = CreateContextInternal(share_context, 3);
   if (!status.ok()) {

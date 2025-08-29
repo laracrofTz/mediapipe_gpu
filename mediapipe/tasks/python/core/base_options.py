@@ -49,6 +49,9 @@ class BaseOptions:
     model_asset_buffer: The model asset file contents as bytes.
     delegate: Acceleration to use. Supported values are GPU and CPU. GPU support
       is currently limited to Ubuntu platforms.
+    gpu_device: Optional GPU device ordinal. When using the GPU delegate this
+      specifies which CUDA device (e.g. ``0`` for ``cuda:0``) should be used.
+      If unset, the first available device is used.
   """
 
   class Delegate(enum.IntEnum):
@@ -58,6 +61,7 @@ class BaseOptions:
   model_asset_path: Optional[str] = None
   model_asset_buffer: Optional[bytes] = None
   delegate: Optional[Delegate] = None
+  gpu_device: Optional[Any] = None
 
   @doc_controls.do_not_generate_docs
   def to_pb2(self) -> _BaseOptionsProto:

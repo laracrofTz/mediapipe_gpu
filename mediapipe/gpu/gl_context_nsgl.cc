@@ -27,17 +27,20 @@
 namespace mediapipe {
 
 GlContext::StatusOrGlContext GlContext::Create(std::nullptr_t nullp,
-                                               bool create_thread) {
-  return Create(static_cast<NSOpenGLContext*>(nil), create_thread);
+                                               bool create_thread,
+                                               int gpu_device) {
+  return Create(static_cast<NSOpenGLContext*>(nil), create_thread, gpu_device);
 }
 
 GlContext::StatusOrGlContext GlContext::Create(const GlContext& share_context,
-                                               bool create_thread) {
-  return Create(share_context.context_, create_thread);
+                                               bool create_thread,
+                                               int gpu_device) {
+  return Create(share_context.context_, create_thread, gpu_device);
 }
 
 GlContext::StatusOrGlContext GlContext::Create(NSOpenGLContext* share_context,
-                                               bool create_thread) {
+                                               bool create_thread,
+                                               int /*gpu_device*/) {
   std::shared_ptr<GlContext> context(new GlContext());
   MP_RETURN_IF_ERROR(context->CreateContext(share_context));
   MP_RETURN_IF_ERROR(context->FinishInitialization(create_thread));

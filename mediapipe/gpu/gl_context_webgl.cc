@@ -31,17 +31,21 @@ namespace mediapipe {
 
 // TODO: Handle webGL "context lost" and "context restored" events.
 GlContext::StatusOrGlContext GlContext::Create(std::nullptr_t nullp,
-                                               bool create_thread) {
-  return Create(static_cast<EMSCRIPTEN_WEBGL_CONTEXT_HANDLE>(0), create_thread);
+                                               bool create_thread,
+                                               int gpu_device) {
+  return Create(static_cast<EMSCRIPTEN_WEBGL_CONTEXT_HANDLE>(0), create_thread,
+                gpu_device);
 }
 
 GlContext::StatusOrGlContext GlContext::Create(const GlContext& share_context,
-                                               bool create_thread) {
-  return Create(share_context.context_, create_thread);
+                                               bool create_thread,
+                                               int gpu_device) {
+  return Create(share_context.context_, create_thread, gpu_device);
 }
 
 GlContext::StatusOrGlContext GlContext::Create(
-    EMSCRIPTEN_WEBGL_CONTEXT_HANDLE share_context, bool create_thread) {
+    EMSCRIPTEN_WEBGL_CONTEXT_HANDLE share_context, bool create_thread,
+    int /*gpu_device*/) {
   std::shared_ptr<GlContext> context(new GlContext());
   MP_RETURN_IF_ERROR(context->CreateContext(share_context));
   MP_RETURN_IF_ERROR(context->FinishInitialization(create_thread));
