@@ -50,18 +50,20 @@ class GpuResources {
  public:
   using StatusOrGpuResources = absl::StatusOr<std::shared_ptr<GpuResources>>;
 
-  static StatusOrGpuResources Create();
+  static StatusOrGpuResources Create(int gpu_device = -1);
   // Optional gpu_buffer_pool_options argument allows to configure the
   // GpuBufferMultiPool instance.
   static StatusOrGpuResources Create(
       PlatformGlContext external_context,
-      const MultiPoolOptions* gpu_buffer_pool_options = nullptr);
+      const MultiPoolOptions* gpu_buffer_pool_options = nullptr,
+      int gpu_device = -1);
 
   // Creates a GpuResources instance that is shared with the GL context provided
   // by the gpu_resources argument.
   static StatusOrGpuResources Create(
       const GpuResources& gpu_resources,
-      const MultiPoolOptions* gpu_buffer_pool_options = nullptr);
+      const MultiPoolOptions* gpu_buffer_pool_options = nullptr,
+      int gpu_device = -1);
 
   // The destructor must be defined in the implementation file so that on iOS
   // the correct ARC release calls are generated.

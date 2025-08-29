@@ -65,7 +65,8 @@ mode) or not (synchronous mode).)doc");
   task_runner.def_static(
       "create",
       [](CalculatorGraphConfig graph_config,
-         std::optional<py::function> packets_callback) {
+         std::optional<py::function> packets_callback,
+         int gpu_device) {
         PacketsCallback callback = nullptr;
         if (packets_callback.has_value()) {
           callback =
@@ -80,7 +81,7 @@ mode) or not (synchronous mode).)doc");
         }
 
 #if !MEDIAPIPE_DISABLE_GPU
-        auto gpu_resources_ = mediapipe::GpuResources::Create();
+        auto gpu_resources_ = mediapipe::GpuResources::Create(gpu_device);
         if (!gpu_resources_.ok()) {
           ABSL_LOG(INFO) << "GPU suport is not available: "
                          << gpu_resources_.status();
@@ -113,13 +114,15 @@ Args:
   graph_config: A MediaPipe task graph config protobuf object.
   packets_callback: A user-defined packets callback function that takes a list
      of output packets as the input argument.
+  gpu_device: The GPU device ordinal to run on. -1 uses the default device.
 
 Raises:
   RuntimeError: Any of the following:
     a) The graph config proto is invalid.
     b) The underlying medipaipe graph fails to initialize and start.
 )doc",
-      py::arg("graph_config"), py::arg("packets_callback") = py::none());
+      py::arg("graph_config"), py::arg("packets_callback") = py::none(),
+      py::arg("gpu_device") = -1);
 
   task_runner.def(
       "process",
