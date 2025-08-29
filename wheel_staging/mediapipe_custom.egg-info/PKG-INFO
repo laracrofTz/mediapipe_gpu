@@ -1,0 +1,7 @@
+Metadata-Version: 2.4
+Name: mediapipe-custom
+Version: 0.0.1+eglpatch
+Summary: MediaPipe fork with custom EGL changes
+Requires-Python: >=3.9
+Dynamic: requires-python
+Dynamic: summary

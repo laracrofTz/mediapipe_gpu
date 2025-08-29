@@ -40,8 +40,8 @@ if [ -z "$1" ]
     echo "Installing OpenCV from source"
     if [[ -x "$(command -v apt)" ]]; then
       sudo apt update && sudo apt install build-essential git
-      sudo apt install cmake ffmpeg libavformat-dev libdc1394-22-dev libgtk2.0-dev \
-                       libjpeg-dev libpng-dev libswscale-dev libtbb2 libtbb-dev \
+      sudo apt install cmake ffmpeg libavformat-dev libdc1394-dev libgtk2.0-dev \
+                       libjpeg-dev libpng-dev libswscale-dev libtbb12 libtbb-dev \
                        libtiff-dev
     elif [[ -x "$(command -v dnf)" ]]; then
       sudo dnf update && sudo dnf install cmake gcc gcc-c git
@@ -73,7 +73,8 @@ if [ -z "$1" ]
           -DBUILD_opencv_structured_light=OFF -DBUILD_opencv_surface_matching=OFF \
           -DBUILD_opencv_world=OFF -DBUILD_opencv_xobjdetect=OFF -DBUILD_opencv_xphoto=OFF \
           -DCV_ENABLE_INTRINSICS=ON -DWITH_EIGEN=ON -DWITH_PTHREADS=ON -DWITH_PTHREADS_PF=ON \
-          -DWITH_JPEG=ON -DWITH_PNG=ON -DWITH_TIFF=ON
+          -DWITH_JPEG=ON -DWITH_PNG=ON -DWITH_TIFF=ON -DWITH_FFMPEG=OFF -DWITH_GTK=OFF -DWITH_GSTREAMER=OFF -DWITH_QT=OFF \
+          -DWITH_1394=OFF
     make -j 16
     sudo make install
     rm -rf /tmp/build_opencv
