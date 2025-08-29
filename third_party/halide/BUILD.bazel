@@ -27,10 +27,10 @@ alias(
     name = "gengen",
     actual = select(
         {
-            "@mediapipe//mediapipe:macos_x86_64": "@macos_x86_64_halide//:gengen",
-            "@mediapipe//mediapipe:macos_arm64": "@macos_arm_64_halide//:gengen",
-            "@mediapipe//mediapipe:windows": "@windows_halide//:gengen",
-            "@mediapipe//mediapipe:linux": "@linux_halide//:gengen",
+            "@mediapipe_custom//mediapipe_custom:macos_x86_64": "@macos_x86_64_halide//:gengen",
+            "@mediapipe_custom//mediapipe_custom:macos_arm64": "@macos_arm_64_halide//:gengen",
+            "@mediapipe_custom//mediapipe_custom:windows": "@windows_halide//:gengen",
+            "@mediapipe_custom//mediapipe_custom:linux": "@linux_halide//:gengen",
             # Deliberately no //condition:default clause here.
         },
         no_match_error = "Compiling Halide code requires that the build host is one of Linux x86-64, Windows x86-64, macOS x86-64, or macOS arm64.",

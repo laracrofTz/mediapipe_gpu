@@ -16,7 +16,7 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("@rules_foreign_cc//foreign_cc:cmake.bzl", "cmake")
 load(
-    "//mediapipe/framework/tool:mediapipe_files.bzl",
+    "//mediapipe_custom/framework/tool:mediapipe_files.bzl",
     "mediapipe_files",
 )
 
@@ -40,25 +40,25 @@ cc_library(
     name = "glog",
     visibility = ["//visibility:public"],
     deps = select({
-        "//mediapipe:android_x86": [
+        "//mediapipe_custom:android_x86": [
             "@com_github_glog_glog_no_gflags//:glog",
         ],
-        "//mediapipe:android_x86_64": [
+        "//mediapipe_custom:android_x86_64": [
             "@com_github_glog_glog_no_gflags//:glog",
         ],
-        "//mediapipe:android_arm": [
+        "//mediapipe_custom:android_arm": [
             "@com_github_glog_glog_no_gflags//:glog",
         ],
-        "//mediapipe:android_arm64": [
+        "//mediapipe_custom:android_arm64": [
             "@com_github_glog_glog_no_gflags//:glog",
         ],
-        "//mediapipe:ios": [
+        "//mediapipe_custom:ios": [
             "@com_github_glog_glog_no_gflags//:glog",
         ],
-        "//mediapipe:macos": [
+        "//mediapipe_custom:macos": [
             "@com_github_glog_glog//:glog",
         ],
-        "//mediapipe:windows": [
+        "//mediapipe_custom:windows": [
             "@com_github_glog_glog_windows//:glog",
         ],
         "//conditions:default": [
@@ -152,7 +152,7 @@ config_setting(
 alias(
     name = "opencv_prebuilt",
     actual = select({
-        "//mediapipe:ios": "@ios_opencv//:opencv",
+        "//mediapipe_custom:ios": "@ios_opencv//:opencv",
         ":opencv_darwin_prebuild": "//third_party/prebuilts:opencv_darwin",
         ":opencv_darwin_arm64_prebuild": "//third_party/prebuilts:opencv_darwin_arm64",
         "//conditions:default": ":opencv_cmake",
@@ -233,8 +233,8 @@ cmake(
         "WITH_PTHREADS_PF": "ON",
         # When building tests, by default Bazel builds them in dynamic mode.
         # See https://docs.bazel.build/versions/master/be/c-cpp.html#cc_binary.linkstatic
-        # For example, when building //mediapipe/calculators/video:opencv_video_encoder_calculator_test,
-        # the dependency //mediapipe/framework/formats:image_frame_opencv will
+        # For example, when building //mediapipe_custom/calculators/video:opencv_video_encoder_calculator_test,
+        # the dependency //mediapipe_custom/framework/formats:image_frame_opencv will
         # be built as a shared library, which depends on a cv::Mat constructor,
         # and expects it to be provided by the main executable. The main
         # executable depends on libimage_frame_opencv.so and links in
@@ -299,13 +299,13 @@ cmake(
 alias(
     name = "opencv_binary",
     actual = select({
-        "//mediapipe:android_x86": "@android_opencv//:libopencv_x86",
-        "//mediapipe:android_x86_64": "@android_opencv//:libopencv_x86_64",
-        "//mediapipe:android_arm": "@android_opencv//:libopencv_armeabi-v7a",
-        "//mediapipe:android_arm64": "@android_opencv//:libopencv_arm64-v8a",
-        "//mediapipe:ios": "@ios_opencv//:opencv",
-        "//mediapipe:macos": "@macos_opencv//:opencv",
-        "//mediapipe:windows": "@windows_opencv//:opencv",
+        "//mediapipe_custom:android_x86": "@android_opencv//:libopencv_x86",
+        "//mediapipe_custom:android_x86_64": "@android_opencv//:libopencv_x86_64",
+        "//mediapipe_custom:android_arm": "@android_opencv//:libopencv_armeabi-v7a",
+        "//mediapipe_custom:android_arm64": "@android_opencv//:libopencv_arm64-v8a",
+        "//mediapipe_custom:ios": "@ios_opencv//:opencv",
+        "//mediapipe_custom:macos": "@macos_opencv//:opencv",
+        "//mediapipe_custom:windows": "@windows_opencv//:opencv",
         "//conditions:default": "@linux_opencv//:opencv",
     }),
 )
@@ -324,10 +324,10 @@ config_setting(
 cc_library(
     name = "android_jni_opencv_cc_lib",
     srcs = select({
-        "//mediapipe:android_arm64": ["@android_opencv//:libopencv_java4_so_arm64-v8a"],
-        "//mediapipe:android_arm": ["@android_opencv//:libopencv_java4_so_armeabi-v7a"],
-        "//mediapipe:android_x86": ["@android_opencv//:libopencv_java4_so_x86"],
-        "//mediapipe:android_x86_64": ["@android_opencv//:libopencv_java4_so_x86_64"],
+        "//mediapipe_custom:android_arm64": ["@android_opencv//:libopencv_java4_so_arm64-v8a"],
+        "//mediapipe_custom:android_arm": ["@android_opencv//:libopencv_java4_so_armeabi-v7a"],
+        "//mediapipe_custom:android_x86": ["@android_opencv//:libopencv_java4_so_x86"],
+        "//mediapipe_custom:android_x86_64": ["@android_opencv//:libopencv_java4_so_x86_64"],
         "//conditions:default": [],
     }),
     alwayslink = 1,
@@ -337,12 +337,12 @@ cc_library(
     name = "libffmpeg",
     visibility = ["//visibility:public"],
     deps = select({
-        "//mediapipe:android_x86": [],
-        "//mediapipe:android_x86_64": [],
-        "//mediapipe:android_arm": [],
-        "//mediapipe:android_arm64": [],
-        "//mediapipe:ios": [],
-        "//mediapipe:macos": [
+        "//mediapipe_custom:android_x86": [],
+        "//mediapipe_custom:android_x86_64": [],
+        "//mediapipe_custom:android_arm": [],
+        "//mediapipe_custom:android_arm64": [],
+        "//mediapipe_custom:ios": [],
+        "//mediapipe_custom:macos": [
             "@macos_ffmpeg//:libffmpeg",
         ],
         "//conditions:default": [

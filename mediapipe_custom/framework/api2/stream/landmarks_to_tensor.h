@@ -1,0 +1,37 @@
+#ifndef MEDIAPIPE_FRAMEWORK_API2_STREAM_LANDMARKS_TO_TENSOR_H_
+#define MEDIAPIPE_FRAMEWORK_API2_STREAM_LANDMARKS_TO_TENSOR_H_
+
+#include <utility>
+#include <vector>
+
+#include "absl/types/span.h"
+#include "mediapipe_custom/calculators/tensor/landmarks_to_tensor_calculator.pb.h"
+#include "mediapipe_custom/framework/api2/builder.h"
+#include "mediapipe_custom/framework/formats/landmark.pb.h"
+#include "mediapipe_custom/framework/formats/tensor.h"
+
+namespace mediapipe_custom::api2::builder {
+
+// Updates @graph to convert @landmarks to a Tensor. Values and their order are
+// defined by @attributes. If @flatten is true resulting tensor will be 1D,
+// otherwise tensor will be 2D with (n_landmarks, n_attributes) shape.
+Stream<std::vector<Tensor>> ConvertLandmarksToTensor(
+    Stream<mediapipe_custom::LandmarkList> landmarks,
+    absl::Span<const mediapipe_custom::LandmarksToTensorCalculatorOptions::Attribute>
+        attributes,
+    bool flatten, Graph& graph);
+
+// Updates @graph to convert @normalized_landmarks to a Tensor. Values and their
+// order are defined by @attributes. X, Y and Z values are scaled using
+// @image_size. If @flatten is true resulting tensor will be 1D, otherwise
+// tensor will be 2D with (n_landmarks, n_attributes) shape.
+Stream<std::vector<Tensor>> ConvertNormalizedLandmarksToTensor(
+    Stream<mediapipe_custom::NormalizedLandmarkList> normalized_landmarks,
+    Stream<std::pair<int, int>> image_size,
+    absl::Span<const mediapipe_custom::LandmarksToTensorCalculatorOptions::Attribute>
+        attributes,
+    bool flatten, Graph& graph);
+
+}  // namespace mediapipe_custom::api2::builder
+
+#endif  // MEDIAPIPE_FRAMEWORK_API2_STREAM_LANDMARKS_TO_TENSOR_H_

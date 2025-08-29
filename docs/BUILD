@@ -6,7 +6,7 @@ py_binary(
     deps = [
         "//third_party/py/absl:app",
         "//third_party/py/absl/flags",
-        "//third_party/py/mediapipe",
+        "//third_party/py/mediapipe_custom",
         "//third_party/py/tensorflow_docs/api_generator:generate_lib",
     ],
 )

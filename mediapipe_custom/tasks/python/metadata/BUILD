@@ -1,0 +1,43 @@
+load("//mediapipe_custom/tasks/metadata:build_defs.bzl", "stamp_metadata_parser_version")
+# Placeholder: load py_binary
+# Placeholder: load py_library
+
+package(
+    licenses = ["notice"],  # Apache 2.0
+)
+
+stamp_metadata_parser_version(
+    name = "metadata_parser_py",
+    srcs = ["metadata_parser.py.template"],
+    outs = ["metadata_parser.py"],
+)
+
+py_library(
+    name = "metadata",
+    srcs = [
+        "metadata.py",
+        ":metadata_parser_py",
+    ],
+    data = ["//mediapipe_custom/tasks/metadata:metadata_schema.fbs"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//mediapipe_custom/tasks/cc/metadata/python:_pywrap_metadata_version",
+        "//mediapipe_custom/tasks/metadata:metadata_schema_py",
+        "//mediapipe_custom/tasks/metadata:schema_py",
+        "//mediapipe_custom/tasks/python/metadata/flatbuffers_lib:_pywrap_flatbuffers",
+        "@flatbuffers//:runtime_py",
+        "@mediapipe_pip_deps//:numpy",
+    ],
+)
+
+py_binary(
+    name = "metadata_displayer_cli",
+    srcs = ["metadata_displayer_cli.py"],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        ":metadata",
+        "@mediapipe_pip_deps//:absl_py",
+    ],
+)

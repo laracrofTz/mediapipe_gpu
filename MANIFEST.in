@@ -7,4 +7,4 @@ include MANIFEST.in
 include README.md
 include requirements.txt
 
-recursive-include mediapipe/modules *.txt
+recursive-include mediapipe_custom/modules *.txt

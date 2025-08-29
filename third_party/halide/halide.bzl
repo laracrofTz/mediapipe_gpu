@@ -36,7 +36,7 @@ def halide_language_copts():
     ]
     return _common_opts + select({
         "//conditions:default": _posix_opts,
-        "@mediapipe//mediapipe:windows": _msvc_opts,
+        "@mediapipe_custom//mediapipe_custom:windows": _msvc_opts,
     })
 
 def halide_language_linkopts():
@@ -54,8 +54,8 @@ def halide_language_linkopts():
     _msvc_opts = []
     return select({
         "//conditions:default": _linux_opts,
-        "@mediapipe//mediapipe:macos": _osx_opts,
-        "@mediapipe//mediapipe:windows": _msvc_opts,
+        "@mediapipe_custom//mediapipe_custom:macos": _osx_opts,
+        "@mediapipe_custom//mediapipe_custom:windows": _msvc_opts,
     })
 
 def halide_runtime_linkopts():
@@ -75,28 +75,28 @@ def halide_runtime_linkopts():
 
     return select({
         "//conditions:default": _posix_opts,
-        "@mediapipe//mediapipe:android": _android_opts,
-        "@mediapipe//mediapipe:windows": _msvc_opts,
+        "@mediapipe_custom//mediapipe_custom:android": _android_opts,
+        "@mediapipe_custom//mediapipe_custom:windows": _msvc_opts,
     })
 
 # Map of halide-target-base -> config_settings
 _HALIDE_TARGET_CONFIG_SETTINGS_MAP = {
     # Android
-    "arm-32-android": ["@mediapipe//mediapipe:android_arm"],
-    "arm-64-android": ["@mediapipe//mediapipe:android_arm64"],
-    "x86-32-android": ["@mediapipe//mediapipe:android_x86"],
-    "x86-64-android": ["@mediapipe//mediapipe:android_x86_64"],
+    "arm-32-android": ["@mediapipe_custom//mediapipe_custom:android_arm"],
+    "arm-64-android": ["@mediapipe_custom//mediapipe_custom:android_arm64"],
+    "x86-32-android": ["@mediapipe_custom//mediapipe_custom:android_x86"],
+    "x86-64-android": ["@mediapipe_custom//mediapipe_custom:android_x86_64"],
     # iOS
-    "arm-32-ios": ["@mediapipe//mediapipe:ios_armv7"],
-    "arm-64-ios": ["@mediapipe//mediapipe:ios_arm64", "@mediapipe//mediapipe:ios_arm64e"],
+    "arm-32-ios": ["@mediapipe_custom//mediapipe_custom:ios_armv7"],
+    "arm-64-ios": ["@mediapipe_custom//mediapipe_custom:ios_arm64", "@mediapipe_custom//mediapipe_custom:ios_arm64e"],
     # OSX (or iOS simulator)
-    "x86-32-osx": ["@mediapipe//mediapipe:ios_i386"],
-    "x86-64-osx": ["@mediapipe//mediapipe:macos_x86_64", "@mediapipe//mediapipe:ios_x86_64"],
-    "arm-64-osx": ["@mediapipe//mediapipe:macos_arm64"],
+    "x86-32-osx": ["@mediapipe_custom//mediapipe_custom:ios_i386"],
+    "x86-64-osx": ["@mediapipe_custom//mediapipe_custom:macos_x86_64", "@mediapipe_custom//mediapipe_custom:ios_x86_64"],
+    "arm-64-osx": ["@mediapipe_custom//mediapipe_custom:macos_arm64"],
     # Windows
-    "x86-64-windows": ["@mediapipe//mediapipe:windows"],
+    "x86-64-windows": ["@mediapipe_custom//mediapipe_custom:windows"],
     # Linux
-    "x86-64-linux": ["@mediapipe//mediapipe:linux"],
+    "x86-64-linux": ["@mediapipe_custom//mediapipe_custom:linux"],
     # Deliberately no //condition:default clause here.
 }
 

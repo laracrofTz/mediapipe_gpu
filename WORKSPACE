@@ -1,4 +1,4 @@
-workspace(name = "mediapipe")
+workspace(name = "mediapipe_custom")
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
@@ -361,7 +361,7 @@ load("@org_tensorflow//third_party/xla/third_party/py:python_init_repositories.b
 python_init_repositories(
     default_python_version = "system",
     local_wheel_dist_folder = "dist",
-    local_wheel_inclusion_list = ["mediapipe*"],
+    local_wheel_inclusion_list = ["mediapipe_custom*"],
     local_wheel_workspaces = ["//:WORKSPACE"],
     requirements = {
         "3.9": "//:requirements_lock.txt",
@@ -399,17 +399,17 @@ py_repositories()
 load("@rules_python//python:pip.bzl", "pip_parse")
 
 pip_parse(
-    name = "mediapipe_pip_deps",
+    name = "mediapipe_custom_pip_deps",
     requirements_lock = "@//:requirements_lock.txt",
 )
 
-load("@mediapipe_pip_deps//:requirements.bzl", mp_install_deps = "install_deps")
+load("@mediapipe_custom_pip_deps//:requirements.bzl", mp_install_deps = "install_deps")
 
 mp_install_deps()
 
 pip_parse(
     name = "model_maker_pip_deps",
-    requirements_lock = "@//mediapipe/model_maker:requirements_lock.txt",
+    requirements_lock = "@//mediapipe_custom/model_maker:requirements_lock.txt",
 )
 
 load("@model_maker_pip_deps//:requirements.bzl", mm_install_deps = "install_deps")
@@ -640,7 +640,7 @@ http_archive(
 )
 
 # After OpenCV 3.2.0, the pre-compiled opencv2.framework has google protobuf symbols, which will
-# trigger duplicate symbol errors in the linking stage of building a mediapipe ios app.
+# trigger duplicate symbol errors in the linking stage of building a mediapipe_custom ios app.
 # To get a higher version of OpenCV for iOS, opencv2.framework needs to be built from source with
 # '-DBUILD_PROTOBUF=OFF -DBUILD_opencv_dnn=OFF'.
 http_archive(

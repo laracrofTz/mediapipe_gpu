@@ -1,5 +1,5 @@
 load(
-    "//mediapipe/framework/tool:mediapipe_files.bzl",
+    "//mediapipe_custom/framework/tool:mediapipe_files.bzl",
     "mediapipe_files",
 )
 

@@ -17,7 +17,7 @@ exports_files(["LICENSE"])
 
 genrule(
     name = "build_opencv_xcframework",
-    srcs = ["@mediapipe//third_party/prebuilts:opencv2.xcframework.zip"],
+    srcs = ["@mediapipe_custom//third_party/prebuilts:opencv2.xcframework.zip"],
     outs = ["opencv2.xcframework.zip"],
     cmd = "cp $(SRCS) $(OUTS)",
 )
