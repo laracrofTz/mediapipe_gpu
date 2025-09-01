@@ -23,7 +23,7 @@
 #include "mediapipe/framework/port/ret_check.h"
 #include "mediapipe/framework/port/status.h"
 #include "mediapipe/framework/port/status_builder.h"
-#include "mediapipe/gpu/egl_base.h"
+// #include "mediapipe/gpu/egl_base.h"
 #include "mediapipe/gpu/gl_context.h"
 #include "mediapipe/gpu/gl_context_internal.h"
 

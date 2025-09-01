@@ -190,9 +190,9 @@ bzl_library(
 OPENCV_MODULES = [
     "calib3d",
     "features2d",
-    "highgui",
-    "video",
-    "videoio",
+    # "highgui",
+    # "video",
+    # "videoio",
     "imgcodecs",
     "imgproc",
     "core",
@@ -202,7 +202,7 @@ OPENCV_MODULES = [
 # still only builds the shared libraries, so we have to choose one or the
 # other. We build shared libraries by default, but this variable can be used
 # to switch to static libraries.
-OPENCV_SHARED_LIBS = True
+OPENCV_SHARED_LIBS = False
 
 OPENCV_SO_VERSION = "3.4"
 
@@ -267,16 +267,16 @@ cmake(
         "-lz",
         "-ltiff",
         "-lImath",
-        "-lIlmImf",
+        # "-lIlmImf",
         "-lIex",
-        "-lHalf",
+        # "-lHalf",
         "-lIlmThread",
         "-ldc1394",
         "-lavcodec",
         "-lavformat",
         "-lavutil",
         "-lswscale",
-        "-lavresample",
+        # "-lavresample",
         "-ldl",
         "-lm",
         "-lpthread",

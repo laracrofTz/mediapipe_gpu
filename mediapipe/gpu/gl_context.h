@@ -22,6 +22,8 @@
 #include <functional>
 #include <memory>
 #include <type_traits>
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
 
 #include "absl/base/attributes.h"
 #include "absl/base/thread_annotations.h"
@@ -40,6 +42,7 @@
 #include "mediapipe/gpu/attachments.h"
 #include "mediapipe/gpu/gl_base.h"
 #include "mediapipe/gpu/gpu_buffer_format.h"
+
 
 #ifdef __APPLE__
 #include <CoreVideo/CoreVideo.h>

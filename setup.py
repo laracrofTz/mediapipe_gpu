@@ -54,6 +54,8 @@ if IS_MAC:
 
 GPU_OPTIONS = GPU_OPTIONS_DISBALED if MP_DISABLE_GPU else GPU_OPTIONS_ENBALED
 
+MP_VERSION = os.environ.get("MEDIAPIPE_PY_VERSION", "0.10.21.dev0")
+
 
 def _normalize_path(path):
   return path.replace('\\', '/') if IS_WINDOWS else path
@@ -520,7 +522,7 @@ class Restore(setuptools.Command):
 
 setuptools.setup(
     name='mediapipe',
-    version=__version__,
+    version=MP_VERSION, #__version__,
     url='https://github.com/google/mediapipe',
     description='MediaPipe is the simplest way for researchers and developers to build world-class ML solutions and applications for mobile, edge, cloud and the web.',
     author='The MediaPipe Authors',
