@@ -7,3 +7,4 @@ node_modules/
 .user.bazelrc
 build
 mediapipe.egg-info
+dist
