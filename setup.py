@@ -54,7 +54,7 @@ if IS_MAC:
 
 GPU_OPTIONS = GPU_OPTIONS_DISBALED if MP_DISABLE_GPU else GPU_OPTIONS_ENBALED
 
-MP_VERSION = os.environ.get("MEDIAPIPE_PY_VERSION", "0.10.21.dev0")
+MP_VERSION = os.environ.get("MEDIAPIPE_PY_VERSION", "0.10.22.dev0")
 
 
 def _normalize_path(path):

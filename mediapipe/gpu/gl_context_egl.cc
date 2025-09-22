@@ -74,13 +74,14 @@ static void EnsureEglThreadRelease() {
                       reinterpret_cast<void*>(0xDEADBEEF));
 }
 
+// grabs default EGL display and initialises EGL on it, returns paltform duiaplays connectsion'
 static absl::StatusOr<EGLDisplay> GetInitializedDefaultEglDisplay() {
-  EGLDisplay display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
-  RET_CHECK(display != EGL_NO_DISPLAY)
+  EGLDisplay display = eglGetDisplay(EGL_DEFAULT_DISPLAY); // get egl display , if no display return error
+  RET_CHECK(display != EGL_NO_DISPLAY) // egl defauly displat gets whatever the platform considers as default
       << "eglGetDisplay() returned error " << std::showbase << std::hex
       << eglGetError();
 
-  EGLint major = 0;
+  EGLint major = 0; // makes EGL code portable as it is a 32bit signed int type, and guarantees same size on all platforms (even 64 bit ones)
   EGLint minor = 0;
   EGLBoolean egl_initialized = eglInitialize(display, &major, &minor);
   RET_CHECK(egl_initialized) << "Unable to initialize EGL";
@@ -94,7 +95,7 @@ static absl::StatusOr<EGLDisplay> GetInitializedEglDisplay(int device) {
   if (device < 0) {
     return GetInitializedDefaultEglDisplay();
   }
-  auto eglQueryDevicesEXT =
+  auto eglQueryDevicesEXT = // load required extension entry points at runtime
       reinterpret_cast<PFNEGLQUERYDEVICESEXTPROC>(
           eglGetProcAddress("eglQueryDevicesEXT"));
   auto eglGetPlatformDisplayEXT =
@@ -103,12 +104,12 @@ static absl::StatusOr<EGLDisplay> GetInitializedEglDisplay(int device) {
   RET_CHECK(eglQueryDevicesEXT && eglGetPlatformDisplayEXT)
       << "EGL device enumeration not supported";
   EGLint num_devices = 0;
-  eglQueryDevicesEXT(0, nullptr, &num_devices);
+  eglQueryDevicesEXT(0, nullptr, &num_devices); // checks how many devices exist
   RET_CHECK_GT(num_devices, device)
       << "GPU device index out of range";
-  std::vector<EGLDeviceEXT> devices(num_devices);
+  std::vector<EGLDeviceEXT> devices(num_devices); // writes array of EGLDeviceEXT handles
   eglQueryDevicesEXT(num_devices, devices.data(), &num_devices);
-  EGLDisplay display =
+  EGLDisplay display = // pin display to specific gpu device
       eglGetPlatformDisplayEXT(EGL_PLATFORM_DEVICE_EXT,
                                devices[device], nullptr);
   RET_CHECK(display != EGL_NO_DISPLAY)
@@ -138,8 +139,10 @@ GlContext::StatusOrGlContext GlContext::Create(const GlContext& share_context,
   return Create(share_context.context_, create_thread, gpu_device);
 }
 
-GlContext::StatusOrGlContext GlContext::Create(EGLContext share_context,
-                                               bool create_thread,
+// basically a ready to use GL context with option to run on its own thread
+// handles object lifetime, threading and device selection at framework level
+GlContext::StatusOrGlContext GlContext::Create(EGLContext share_context, // construct and fully initialise GLContext
+                                               bool create_thread, //true: spins up GL thread and runs work there
                                                int gpu_device) {
   std::shared_ptr<GlContext> context(new GlContext());
   context->gpu_device_ = gpu_device;
@@ -148,7 +151,8 @@ GlContext::StatusOrGlContext GlContext::Create(EGLContext share_context,
   return std::move(context);
 }
 
-absl::Status GlContext::CreateContextInternal(EGLContext share_context,
+// handles purely EGL mechanics (like choosing config, creating gl es 2/3 with no policy)
+absl::Status GlContext::CreateContextInternal(EGLContext share_context, // selects EGL config 
                                               int gl_version) {
   ABSL_CHECK(gl_version == 2 || gl_version == 3);
 

@@ -75,7 +75,7 @@ class TaskRunner {
   // asynchronous method, Send(), to provide the input packets. If the packets
   // callback is absent, clients must use the synchronous method, Process(), to
   // provide the input packets and receive the output packets.
-#if !MEDIAPIPE_DISABLE_GPU
+#if !MEDIAPIPE_DISABLE_GPU // go into this line
   static absl::StatusOr<std::unique_ptr<TaskRunner>> Create(
       CalculatorGraphConfig config,
       std::unique_ptr<tflite::OpResolver> op_resolver = nullptr,

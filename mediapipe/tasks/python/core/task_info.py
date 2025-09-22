@@ -13,7 +13,7 @@
 # limitations under the License.
 """MediaPipe Tasks' task info data class."""
 
-import dataclasses
+import dataclasses, os
 from typing import Any, List
 from google.protobuf import any_pb2
 from mediapipe.calculators.core import flow_limiter_calculator_pb2
@@ -43,7 +43,8 @@ class TaskInfo:
 
   def generate_graph_config(
       self,
-      enable_flow_limiting: bool = False
+      enable_flow_limiting: bool = False,
+      gpu_device: int = 0
   ) -> calculator_pb2.CalculatorGraphConfig:
     """Generates a MediaPipe Task CalculatorGraphConfig proto from TaskInfo.
 
@@ -102,11 +103,24 @@ class TaskInfo:
       node_config.node_options.append(task_subgraph_options)
 
     if not enable_flow_limiting:
-      return calculator_pb2.CalculatorGraphConfig(
+      # return calculator_pb2.CalculatorGraphConfig(
+      config = calculator_pb2.CalculatorGraphConfig(
           node=[node_config],
           input_stream=self.input_streams,
           output_stream=self.output_streams,
       )
+
+      # new profiler setup
+      cfg = config.profiler_config
+      cfg.enable_profiler = True   
+      cfg.trace_enabled = True           
+      cfg.enable_stream_latency = True       
+      cfg.trace_log_path = f"/home/advaitaa/Desktop/realtimehandtracking/gpu_trace/mediapipe_trace_{gpu_device}_{os.getpid()}_"  # TODO: change absolute path
+      cfg.trace_log_count = 3 #200 # rotation
+      cfg.trace_log_interval_usec = 500000 #200000
+      cfg.trace_log_interval_count = 20 #5 
+
+      return config
     # When a FlowLimiterCalculator is inserted to lower the overall graph
     # latency, the task doesn't guarantee that each input must have the
     # corresponding output.
@@ -136,4 +150,15 @@ class TaskInfo:
         input_stream=self.input_streams,
         output_stream=self.output_streams,
     )
+
+    # setup profiler here (with flow limiting)
+    cfg = config.profiler_config
+    cfg.enable_profiler = True   
+    cfg.trace_enabled = True           
+    cfg.enable_stream_latency = True       
+    cfg.trace_log_path = f"/home/advaitaa/Desktop/realtimehandtracking/gpu_trace/mediapipe_trace_{gpu_device}_{os.getpid()}_" # TODO: change absolute path
+    cfg.trace_log_count = 3 #200 # rotation
+    cfg.trace_log_interval_usec = 500000 #200000
+    cfg.trace_log_interval_count = 20 #5 
+
     return config

@@ -374,7 +374,8 @@ class HandLandmarker(base_vision_task_api.BaseVisionTaskApi):
     return cls(
         task_info.generate_graph_config(
             enable_flow_limiting=options.running_mode
-            == _RunningMode.LIVE_STREAM
+            == _RunningMode.LIVE_STREAM,
+            gpu_device=gpu_device_id
         ),
         options.running_mode,
         packets_callback if options.result_callback else None,
