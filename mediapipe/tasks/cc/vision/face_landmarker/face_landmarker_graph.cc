@@ -45,13 +45,45 @@ limitations under the License.
 #include "mediapipe/tasks/cc/metadata/utils/zip_utils.h"
 #include "mediapipe/tasks/cc/vision/face_detector/proto/face_detector_graph_options.pb.h"
 #include "mediapipe/tasks/cc/vision/face_geometry/calculators/geometry_pipeline_calculator.pb.h"
+#ifdef near
+  #pragma push_macro("near")
+  #undef near
+#endif
+#ifdef far
+  #pragma push_macro("far")
+  #undef far
+#endif
 #include "mediapipe/tasks/cc/vision/face_geometry/proto/environment.pb.h"
+#ifdef near
+  #pragma pop_macro("near")
+#endif
+#ifdef far
+  #pragma pop_macro("far")
+#endif
+// #include "mediapipe/tasks/cc/vision/face_geometry/proto/environment.pb.h"
 #include "mediapipe/tasks/cc/vision/face_geometry/proto/face_geometry.pb.h"
 #include "mediapipe/tasks/cc/vision/face_geometry/proto/face_geometry_graph_options.pb.h"
 #include "mediapipe/tasks/cc/vision/face_landmarker/proto/face_blendshapes_graph_options.pb.h"
 #include "mediapipe/tasks/cc/vision/face_landmarker/proto/face_landmarker_graph_options.pb.h"
 #include "mediapipe/tasks/cc/vision/face_landmarker/proto/face_landmarks_detector_graph_options.pb.h"
 #include "mediapipe/util/graph_builder_utils.h"
+
+
+#ifdef GetObject
+#undef GetObject
+#endif
+#ifdef ERROR
+#undef ERROR
+#endif
+// this is put after including environment.pb.h, so it wont affect since the preprocessor already expanded
+// so it will still throw errors
+// #ifdef near
+// #undef near
+// #endif
+// #ifdef far
+// #undef far
+// #endif
+
 
 namespace mediapipe {
 namespace tasks {
