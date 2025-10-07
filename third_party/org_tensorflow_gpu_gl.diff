@@ -1,0 +1,76 @@
+diff --git a/tensorflow/lite/delegates/gpu/gl/BUILD b/tensorflow/lite/delegates/gpu/gl/BUILD
+index 7bc5cd2..f1b014e 100644
+--- a/tensorflow/lite/delegates/gpu/gl/BUILD
++++ b/tensorflow/lite/delegates/gpu/gl/BUILD
+@@ -180,6 +180,7 @@ cc_library(
+         ":gl_errors",
+         ":portable",
+         "//tensorflow/lite/delegates/gpu/common:status",
++        "@angle//:angle",
+     ],
+ )
+ 
+@@ -195,6 +196,7 @@ cc_library(
+         ":request_gpu_info",
+         "//tensorflow/lite/delegates/gpu/common:status",
+         "@com_google_absl//absl/memory",
++        "@angle//:angle",
+     ],
+ )
+ 
+@@ -207,6 +209,7 @@ cc_library(
+         ":gl_errors",
+         ":portable",
+         "//tensorflow/lite/delegates/gpu/common:status",
++        "@angle//:angle",
+     ],
+ )
+ 
+@@ -233,6 +236,7 @@ cc_library(
+         ":portable",
+         "//tensorflow/lite/delegates/gpu/common:status",
+         "@com_google_absl//absl/types:span",
++        "@angle//:angle",
+     ],
+ )
+ 
+@@ -275,6 +279,7 @@ cc_library(
+         ":portable",
+         "//tensorflow/lite/delegates/gpu/common:status",
+         "@com_google_absl//absl/strings",
++        "@angle//:angle",
+     ],
+ )
+ 
+@@ -291,6 +296,7 @@ cc_library(
+         "//tensorflow/lite/delegates/gpu/common:status",
+         "//tensorflow/lite/delegates/gpu/common:types",
+         "@com_google_absl//absl/types:variant",
++        "@angle//:angle",
+     ],
+ )
+ 
+@@ -320,6 +326,7 @@ cc_library(
+         "//tensorflow/lite/delegates/gpu/common:tensor",
+         "//tensorflow/lite/delegates/gpu/common:types",
+         "@com_google_absl//absl/types:span",
++        "@angle//:angle",
+     ],
+ )
+ 
+@@ -330,6 +337,7 @@ cc_library(
+     deps = [
+         ":portable",
+         "//tensorflow/lite/delegates/gpu/common:data_type",
++        "@angle//:angle",        
+     ],
+ )
+ 
+@@ -447,6 +455,7 @@ cc_library(
+         "//tensorflow/lite/delegates/gpu/gl/runtime:shared_buffer",
+         "@com_google_absl//absl/status",
+         "@com_google_absl//absl/strings",
++        "@angle//:angle",
+     ],
+ )
+ 

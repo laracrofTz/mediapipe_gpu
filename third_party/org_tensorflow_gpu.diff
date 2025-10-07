@@ -1,0 +1,12 @@
+diff --git a/tensorflow/lite/delegates/gpu/BUILD b/tensorflow/lite/delegates/gpu/BUILD
+index 4e216c6..d7f13fe 100644
+--- a/tensorflow/lite/delegates/gpu/BUILD
++++ b/tensorflow/lite/delegates/gpu/BUILD
+@@ -255,6 +255,7 @@ cc_library(
+         "@com_google_absl//absl/types:variant",
+         "@opencl_headers",
+         "@vulkan_headers//:vulkan_headers_no_prototypes",
++        "@angle//:angle",
+     ],
+ )
+ 

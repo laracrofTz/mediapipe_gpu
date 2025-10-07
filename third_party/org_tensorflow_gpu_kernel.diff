@@ -1,0 +1,12 @@
+diff --git a/tensorflow/lite/delegates/gpu/gl/kernels/BUILD b/tensorflow/lite/delegates/gpu/gl/kernels/BUILD
+index 154d0ae..16c7b75 100644
+--- a/tensorflow/lite/delegates/gpu/gl/kernels/BUILD
++++ b/tensorflow/lite/delegates/gpu/gl/kernels/BUILD
+@@ -31,6 +31,7 @@ cc_library(
+         "//tensorflow/lite/delegates/gpu/gl:gl_shader",
+         "@com_google_absl//absl/strings",
+         "@com_google_absl//absl/types:span",
++        "@angle//:angle",
+     ],
+ )
+ 

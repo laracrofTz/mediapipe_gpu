@@ -1,0 +1,12 @@
+diff --git a/tensorflow/lite/delegates/gpu/gl/converters/BUILD b/tensorflow/lite/delegates/gpu/gl/converters/BUILD
+index 8403a80..a587480 100644
+--- a/tensorflow/lite/delegates/gpu/gl/converters/BUILD
++++ b/tensorflow/lite/delegates/gpu/gl/converters/BUILD
+@@ -36,6 +36,7 @@ cc_library(
+         "//tensorflow/lite/delegates/gpu/gl:gl_program",
+         "//tensorflow/lite/delegates/gpu/gl:gl_shader",
+         "//tensorflow/lite/delegates/gpu/gl:variable",
++        "@angle//:angle",
+     ],
+ )
+ 
