@@ -74,7 +74,7 @@ class BaseOptions:
     platform_name = platform.system()
 
     if self.delegate == BaseOptions.Delegate.GPU:
-      if platform_name in ['Linux', 'Darwin']:
+      if platform_name in ['Linux', 'Darwin', 'Windows']: # add windows here too
         acceleration_proto = _AccelerationProto(gpu=_DelegateProto.Gpu())
       else:
         raise NotImplementedError(
