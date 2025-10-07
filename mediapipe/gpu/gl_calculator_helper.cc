@@ -26,6 +26,10 @@
 #include "mediapipe/gpu/gpu_buffer.h"
 #include "mediapipe/gpu/gpu_service.h"
 
+#ifdef GetObject
+#undef GetObject
+#endif
+
 namespace mediapipe {
 
 GlCalculatorHelper::GlCalculatorHelper() {}

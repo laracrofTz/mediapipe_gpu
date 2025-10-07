@@ -75,11 +75,12 @@ absl::Status ImageFrameToGpuBufferCalculator::Process(CalculatorContext* cc) {
   cc->Outputs().Index(0).Add(new GpuBuffer(buffer), cc->InputTimestamp());
 #else
   const auto& input = cc->Inputs().Index(0).Get<ImageFrame>();
-  helper_.RunInGlContext([this, &input, &cc]() {
+  helper_.RunInGlContext([this, &input, &cc]() -> absl::Status {
     GlTexture dst = helper_.CreateDestinationTexture(input);
     std::unique_ptr<GpuBuffer> output = dst.GetFrame<GpuBuffer>();
     cc->Outputs().Index(0).Add(output.release(), cc->InputTimestamp());
     dst.Release();
+    return absl::OkStatus();
   });
 #endif  // MEDIAPIPE_GPU_BUFFER_USE_CV_PIXEL_BUFFER
   return absl::OkStatus();

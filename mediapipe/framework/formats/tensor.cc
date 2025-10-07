@@ -347,13 +347,22 @@ void Tensor::AllocateOpenGlTexture2d() const {
 Tensor::OpenGlBufferView Tensor::GetOpenGlBufferReadView() const {
   ABSL_LOG_IF(FATAL, valid_ == kValidNone)
       << "Tensor must be written prior to read from.";
-  ABSL_LOG_IF(FATAL, !(valid_ & (kValidCpu |
-#ifdef MEDIAPIPE_TENSOR_USE_AHWB
-                                 kValidAHardwareBuffer |
-#endif  // MEDIAPIPE_TENSOR_USE_AHWB
-                                 kValidOpenGlBuffer)))
-      << "Tensor conversion between different GPU backing formats is not "
-         "supported yet.";
+//   ABSL_LOG_IF(FATAL, !(valid_ & (kValidCpu |
+// #ifdef MEDIAPIPE_TENSOR_USE_AHWB
+//                                  kValidAHardwareBuffer |
+// #endif  // MEDIAPIPE_TENSOR_USE_AHWB
+//                                  kValidOpenGlBuffer)))
+//       << "Tensor conversion between different GPU backing formats is not "
+//          "supported yet.";
+  uint32_t readable_mask = kValidCpu;
+  #ifdef MEDIAPIPE_TENSOR_USE_AHWB
+    readable_mask |= kValidAHardwareBuffer;
+  #endif
+    readable_mask |= kValidOpenGlBuffer;
+
+  ABSL_LOG_IF(FATAL, !(valid_ & (readable_mask)))
+        << "Tensor conversion between different GPU backing formats is not "
+            "supported yet.";
   auto lock(std::make_unique<absl::MutexLock>(&view_mutex_));
   AllocateOpenGlBuffer();
   if (!(valid_ & kValidOpenGlBuffer)) {

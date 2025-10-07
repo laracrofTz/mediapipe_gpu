@@ -52,6 +52,7 @@ class LegacyCalculatorSupport {
    private:
     // The value to restore after exiting this scope.
     C* saved_;
+    static thread_local C* current_;
 
     // This needs NOLINT because, when included in Objective-C++ files,
     // clang-tidy suggests using an Objective-C naming convention, which is
@@ -59,11 +60,11 @@ class LegacyCalculatorSupport {
     //
     // ABSL_CONST_INIT triggers b/155992786 with some versions of Clang on Apple
     // platforms.
-#ifndef __APPLE__
-    ABSL_CONST_INIT
-#endif                                // !__APPLE__
-    static thread_local C* current_;  // NOLINT
-  };
+// #ifndef __APPLE__
+//     ABSL_CONST_INIT
+// #endif                                // !__APPLE__
+//     static thread_local C* current_;  // NOLINT
+ };
 };
 
 #if !defined(_MSC_VER) || defined(__clang__)

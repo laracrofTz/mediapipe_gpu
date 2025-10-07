@@ -36,6 +36,24 @@
 #include "mediapipe/gpu/graph_support.h"
 #include "mediapipe/gpu/multi_pool.h"
 
+#ifdef GetObject
+#undef GetObject
+#endif
+#ifdef ERROR  // GDI macro that can break ABSL_LOG_IF(ERROR, ...)
+#undef ERROR
+#endif
+
+template <class C, class F>
+absl::Status RunAndGetStatus(C* ctx, F&& f) {
+  if constexpr (std::is_same_v<decltype(ctx->Run(std::forward<F>(f))),
+                               absl::Status>) {
+    return ctx->Run(std::forward<F>(f));
+  } else {
+    ctx->Run(std::forward<F>(f));
+    return absl::OkStatus();
+  }
+}
+
 #if MEDIAPIPE_METAL_ENABLED
 #include "mediapipe/gpu/metal_shared_resources.h"
 #endif  // MEDIAPIPE_METAL_ENABLED
@@ -128,8 +146,11 @@ GpuResources::GpuResources(std::shared_ptr<GlContext> gl_context,
                         // this destructor and execute jobs after the
                         // GpuResources object is destroyed.
                         for (auto& [key, context] : *map) {
-                          const auto status = std::move(context)->Run(
-                              []() { return absl::OkStatus(); });
+                          // const auto status = std::move(context)->Run(
+                          //     []() { return absl::OkStatus(); });
+                          // compiler error fix: error C3313: 'status': variable cannot have the type 'const void'
+                          const absl::Status status = RunAndGetStatus(
+                              context.get(), []() -> absl::Status { return absl::OkStatus(); });
                           ABSL_LOG_IF(ERROR, !status.ok())
                               << "Failed to flush GlContext jobs: " << status;
                         }
@@ -179,7 +200,9 @@ GpuResources::~GpuResources() {
   // gpu resources (e.g. GpuResources::gpu_buffer_pool_) through a raw pointer,
   // have finished before kept gpu resources get deleted.
   for (auto& [key, context] : *gl_key_context_) {
-    const auto status = context->Run([]() { return absl::OkStatus(); });
+    // const auto status = context->Run([]() { return absl::OkStatus(); });
+    const absl::Status status = RunAndGetStatus(
+        context.get(), []() -> absl::Status { return absl::OkStatus(); });
     ABSL_LOG_IF(ERROR, !status.ok())
         << "Failed to flush GlContext jobs: " << status;
   }

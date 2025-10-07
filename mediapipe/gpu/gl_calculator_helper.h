@@ -98,13 +98,22 @@ class GlCalculatorHelper {
   //
   // Therefore, instead of using std::function<void(void)>, we use a template
   // that only accepts arguments with a void result type.
-  template <typename T, typename = typename std::enable_if<std::is_void<
-                            typename std::result_of<T()>::type>::value>::type>
+  // template <typename T, typename = typename std::enable_if<std::is_void<
+  //                           typename std::result_of<T()>::type>::value>::type>
+  // void RunInGlContext(T f) {
+  //   RunInGlContext([f] {
+  //     f();
+  //     return absl::OkStatus();
+  //   }).IgnoreError();
+  // }
+  template <typename T,
+          typename = std::enable_if_t<
+              std::is_void_v<std::invoke_result_t<T&>>>>  // C++17/20
   void RunInGlContext(T f) {
-    RunInGlContext([f] {
+    RunInGlContext(std::function<absl::Status(void)>([f]() -> absl::Status {
       f();
       return absl::OkStatus();
-    }).IgnoreError();
+    })).IgnoreError();
   }
 
   // Use CreateSourceTexture and CreateDestinationTexture to set up textures

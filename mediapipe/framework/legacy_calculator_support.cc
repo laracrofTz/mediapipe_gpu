@@ -17,10 +17,10 @@
 namespace mediapipe {
 
 template <>
-thread_local CalculatorContext*
+constinit thread_local CalculatorContext*
     LegacyCalculatorSupport::Scoped<CalculatorContext>::current_ = nullptr;
 template <>
-thread_local CalculatorContract*
+constinit thread_local CalculatorContract*
     LegacyCalculatorSupport::Scoped<CalculatorContract>::current_ = nullptr;
 
 }  // namespace mediapipe

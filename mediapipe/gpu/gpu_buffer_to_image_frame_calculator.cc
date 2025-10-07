@@ -95,7 +95,7 @@ absl::Status GpuBufferToImageFrameCalculator::Process(CalculatorContext* cc) {
         CreateImageFrameForCVPixelBuffer(GetCVPixelBufferRef(input));
     cc->Outputs().Index(0).Add(frame.release(), cc->InputTimestamp());
 #else
-    helper_.RunInGlContext([this, &input, &cc]() {
+    helper_.RunInGlContext([this, &input, &cc]() -> absl::Status {
       auto src = helper_.CreateSourceTexture(input);
       std::unique_ptr<ImageFrame> frame = absl::make_unique<ImageFrame>(
           ImageFormatForGpuBufferFormat(input.format()), src.width(),
@@ -107,6 +107,7 @@ absl::Status GpuBufferToImageFrameCalculator::Process(CalculatorContext* cc) {
                    info.gl_type, frame->MutablePixelData());
       cc->Outputs().Index(0).Add(frame.release(), cc->InputTimestamp());
       src.Release();
+      return absl::OkStatus();
     });
 #endif  // MEDIAPIPE_GPU_BUFFER_USE_CV_PIXEL_BUFFER
     return absl::OkStatus();
