@@ -1,5 +1,15 @@
 workspace(name = "mediapipe")
 
+# uncomment only if we want to use clang compiler
+# register platform + toolchain so that every build picks up clang-cl compiler
+# register_execution_platforms(
+#     "//:x64_windows-clang-cl",
+# )
+
+# register_toolchains(
+#     "@local_config_cc//:cc-toolchain-x64_windows-clang-cl",
+# )
+
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 # Protobuf expects an //external:python_headers target
@@ -314,6 +324,11 @@ http_archive(
 http_archive(
     name = "pthreadpool",
     # `curl -L <url> | shasum -a 256`
+    patch_args = ["-p1"],
+    patches = [
+        "@//third_party:fix_pthreadpool_windows.diff", # add c11 flag patch
+        "@//third_party:fix_atomic_pthreadpool_windows.diff", # conditionally skip atomic header patch
+    ],
     sha256 = "516ba8d05c30e016d7fd7af6a7fc74308273883f857faf92bc9bb630ab6dba2c",
     strip_prefix = "pthreadpool-c2ba5c50bb58d1397b693740cf75fad836a0d1bf",
     urls = ["https://github.com/google/pthreadpool/archive/c2ba5c50bb58d1397b693740cf75fad836a0d1bf.zip"],
@@ -339,6 +354,11 @@ http_archive(
         # Works around Bazel issue with objc_library.
         # See https://github.com/bazelbuild/bazel/issues/19912
         "@//third_party:org_tensorflow_objc_build_fixes.diff",
+        # adding angle libs for required thrid party targets patch
+        "@//third_party:org_tensorflow_gpu.diff",
+        "@//third_party:org_tensorflow_gpu_gl.diff",
+        "@//third_party:org_tensorflow_gpu_kernel.diff",
+        "@//third_party:org_tensorflow_gpu_converter.diff",
     ],
     sha256 = _TENSORFLOW_SHA256,
     strip_prefix = "tensorflow-%s" % _TENSORFLOW_GIT_COMMIT,
@@ -359,7 +379,7 @@ python_init_rules()
 load("@org_tensorflow//third_party/xla/third_party/py:python_init_repositories.bzl", "python_init_repositories")
 
 python_init_repositories(
-    default_python_version = "system",
+    default_python_version = "3.11",#"system", changed from system to conda env version windows OS
     local_wheel_dist_folder = "dist",
     local_wheel_inclusion_list = ["mediapipe*"],
     local_wheel_workspaces = ["//:WORKSPACE"],
@@ -629,6 +649,13 @@ new_local_repository(
     name = "system_python",
     build_file = "@//third_party:python_runtime.BUILD",
     path = ".",
+)
+
+# angle
+new_local_repository( 
+    name = "angle",
+    build_file = "@//third_party:angle.BUILD",
+    path = "C:\\Users\\user\\Desktop\\angle", # TODO: change the absolute path, clone angle directly in C: folder
 )
 
 http_archive(

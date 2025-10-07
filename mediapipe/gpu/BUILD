@@ -123,6 +123,9 @@ cc_library(
         "//mediapipe:android": [],
         "//mediapipe:apple": [],
         "//mediapipe:emscripten": [],
+        "//mediapipe:windows": [
+            "@angle//:angle",
+        ],
         "//conditions:default": [
         ],
     }),
@@ -175,7 +178,8 @@ cc_library(
     ],
 )
 
-cc_library(
+# TODO: change all the newly added absolute paths
+cc_library( # modify here for all GPU related tasks 
     name = "gl_context",
     srcs = [
         "gl_context.cc",
@@ -192,6 +196,9 @@ cc_library(
         ],
         "//mediapipe:macos": [
             "gl_context_nsgl.cc",
+        ],
+        "//mediapipe:windows": [
+            "gl_context_win.cc",
         ],
     }),
     hdrs = ["gl_context.h"],
@@ -211,6 +218,12 @@ cc_library(
             "-framework OpenGL",
             "-framework AppKit",
         ],
+        # "//mediapipe:windows": [
+        #     "/LIBPATH:C:/Users/user/Desktop/angle/out/Debug",
+        #     "libGLESv2.dll.lib", # dll is import libraries used at link time
+        #     "libEGL.dll.lib",
+        #     "d3dcompiler_47.dll"
+        # ],
     }),
     visibility = [
         "//visibility:public",
@@ -229,6 +242,7 @@ cc_library(
         "//mediapipe/framework/port:status",
         "//mediapipe/framework/port:statusor",
         "//mediapipe/framework/port:threadpool",
+        # "//third_party:angle",
         "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/base:dynamic_annotations",
         "@com_google_absl//absl/debugging:leak_check",
@@ -245,6 +259,9 @@ cc_library(
         "//conditions:default": [],
         "//mediapipe:apple": [
             "//mediapipe/objc:CFHolder",
+        ],
+        "//mediapipe:windows": [
+            "@angle//:angle",
         ],
     }) + select({
         "//conditions:default": [
@@ -263,6 +280,15 @@ cc_library(
     srcs = ["gl_texture_buffer.cc"],
     hdrs = ["gl_texture_buffer.h"],
     visibility = ["//visibility:public"],
+    copts = select({ # compiler out of heap space error
+        "@bazel_tools//src/conditions:windows": [
+            "/bigobj",
+            "/Zm500", #Zm1600
+            "/d2ReducedOptimizeHugeFunctions",
+            "/O2", # O1
+        ],
+        "//conditions:default": [],
+    }),
     deps = [
         ":gl_base",
         ":gl_context",
@@ -733,6 +759,12 @@ cc_library(
         "//mediapipe:apple": [
             "-x objective-c++",
             "-fobjc-arc",  # enable reference-counting
+        ],
+        "@bazel_tools//src/conditions:windows": [
+            "/bigobj",
+            "/Zm500", # Zm2000
+            "/d2ReducedOptimizeHugeFunctions",
+            "/O2", # Od
         ],
     }),
     visibility = ["//visibility:private"],

@@ -571,6 +571,48 @@ config_setting(
     visibility = ["//mediapipe/framework:__pkg__"],
 )
 
+# this builds 2 sources, tensor.cc, tensor_ahwb.cc and copt applies to both
+# to fix heap space error, try separating tensor.cc into a separate lib
+
+cc_library(
+    name = "tensor_cc_win_fix",
+    srcs = ["tensor.cc"],
+    copts = select({
+        "@bazel_tools//src/conditions:windows": [
+            "/bigobj",
+            "/Zm500", # Zm2000
+            "/d2ReducedOptimizeHugeFunctions",
+            "/O2",
+        ],
+        "//conditions:default": [],
+    }),
+    deps = [
+        "//mediapipe/framework:memory_manager",
+        "//mediapipe/framework:port",
+        "//mediapipe/framework/deps:no_destructor",
+        "//mediapipe/framework/port:aligned_malloc_and_free",
+        "//mediapipe/framework/port:ret_check",
+        "//mediapipe/framework/port:status",
+        "//mediapipe/gpu/webgpu:webgpu_check",
+        "@com_google_absl//absl/base:core_headers",
+        "@com_google_absl//absl/container:flat_hash_map",
+        "@com_google_absl//absl/container:flat_hash_set",
+        "@com_google_absl//absl/functional:any_invocable",
+        "@com_google_absl//absl/log:absl_check",
+        "@com_google_absl//absl/log:absl_log",
+        "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/synchronization",
+    ] + select({
+        "//mediapipe/gpu:disable_gpu": [],
+        "//conditions:default": [
+            "//mediapipe/gpu:gl_base",
+            "//mediapipe/gpu:gl_context",
+        ],
+    }),
+)
+
 cc_library(
     name = "tensor",
     srcs =
@@ -580,7 +622,7 @@ cc_library(
             ],
             "//conditions:default": [],
         }) + [
-            "tensor.cc",
+            # "tensor.cc",
             "tensor_ahwb.cc",
         ],
     hdrs = [
@@ -608,6 +650,7 @@ cc_library(
         "//mediapipe/gpu/webgpu:use_webgpu_emscripten": ["-sUSE_WEBGPU=1"],
     }),
     deps = [
+        ":tensor_cc_win_fix",
         "//mediapipe/framework:memory_manager",
         "//mediapipe/framework:port",
         "//mediapipe/framework/deps:no_destructor",
