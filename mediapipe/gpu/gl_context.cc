@@ -12,6 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#if defined(_WIN32)
+  #ifndef HAS_EGL
+  #error "HAS_EGL is not defined on Windows; add /DHAS_EGL=1 to copts."
+  #endif
+  // windows macros breaking templates
+  #ifndef NOMINMAX
+  #define NOMINMAX
+  #endif
+#endif
+// #include <pthread.h> // added here for Linux instead of being in the header file
 #include "mediapipe/gpu/gl_context.h"
 
 #include <sys/types.h>
@@ -26,6 +36,7 @@
 #include <limits>
 #include <memory>
 #include <utility>
+#include <thread>
 
 #include "absl/base/attributes.h"
 #include "absl/base/dynamic_annotations.h"
@@ -95,17 +106,20 @@ static void SetThreadName(const char* name) {
 }
 
 GlContext::DedicatedThread::DedicatedThread() {
-  ABSL_CHECK_EQ(pthread_create(&gl_thread_id_, nullptr, ThreadBody, this), 0);
+  // ABSL_CHECK_EQ(pthread_create(&gl_thread_id_, nullptr, ThreadBody, this), 0);
+  gl_thread_ = std::thread(&GlContext::DedicatedThread::ThreadBody, this);
 }
 
 GlContext::DedicatedThread::~DedicatedThread() {
   if (IsCurrentThread()) {
     ABSL_CHECK(self_destruct_);
-    ABSL_CHECK_EQ(pthread_detach(gl_thread_id_), 0);
+    // ABSL_CHECK_EQ(pthread_detach(gl_thread_id_), 0);
+    gl_thread_.detach();
   } else {
     // Give an invalid job to signal termination.
     PutJob({});
-    ABSL_CHECK_EQ(pthread_join(gl_thread_id_, nullptr), 0);
+    // ABSL_CHECK_EQ(pthread_join(gl_thread_id_, nullptr), 0);
+    gl_thread_.join();
   }
 }
 
@@ -131,11 +145,11 @@ void GlContext::DedicatedThread::PutJob(Job job) {
   has_jobs_cv_.SignalAll();
 }
 
-void* GlContext::DedicatedThread::ThreadBody(void* instance) {
-  DedicatedThread* thread = static_cast<DedicatedThread*>(instance);
-  thread->ThreadBody();
-  return nullptr;
-}
+// void* GlContext::DedicatedThread::ThreadBody(void* instance) {
+//   DedicatedThread* thread = static_cast<DedicatedThread*>(instance);
+//   thread->ThreadBody();
+//   return nullptr;
+// }
 
 #ifdef __APPLE__
 #define AUTORELEASEPOOL @autoreleasepool
@@ -210,7 +224,9 @@ void GlContext::DedicatedThread::RunWithoutWaiting(GlVoidFunction gl_func) {
 }
 
 bool GlContext::DedicatedThread::IsCurrentThread() {
-  return pthread_equal(gl_thread_id_, pthread_self());
+  // return pthread_equal(gl_thread_id_, pthread_self());
+  return std::this_thread::get_id() == gl_thread_.get_id(); // checks if current thread is same as thread stored in gl_thread_
+  // some operations must be performed on same thread that owns the graphics context
 }
 
 bool GlContext::ParseGlVersion(absl::string_view version_string, GLint* major,
@@ -327,7 +343,8 @@ absl::Status GlContext::FinishInitialization(bool create_thread) {
 #endif
   }
 
-  return Run([this]() -> absl::Status {
+  // return Run([this]() -> absl::Status {
+  return Run(GlStatusFunction([this]() -> absl::Status { // cast lambda to glstatus function
     // Clear any GL errors at this point: as this is a fresh context
     // there shouldn't be any, but if we adopted an existing context (e.g. in
     // some Emscripten cases), there might be some existing tripped error.
@@ -405,7 +422,7 @@ absl::Status GlContext::FinishInitialization(bool create_thread) {
 #endif  // GL_ES_VERSION_2_0
 
     return absl::OkStatus();
-  });
+  }));
 }
 
 GlContext::GlContext() = default;
@@ -479,15 +496,23 @@ absl::Status GlContext::Run(GlStatusFunction gl_func, int node_id,
                             Timestamp input_timestamp) {
   absl::Status status;
   if (profiling_helper_) {
-    gl_func = [=] {
-      profiling_helper_->MarkTimestamp(node_id, input_timestamp,
-                                       /*is_finish=*/false);
-      auto status = gl_func();
-      profiling_helper_->MarkTimestamp(node_id, input_timestamp,
-                                       /*is_finish=*/true);
-      return status;
-    };
-  }
+    GlStatusFunction original_gl_func = gl_func;
+    gl_func = [=]() -> absl::Status {
+        profiling_helper_->MarkTimestamp(node_id, input_timestamp,
+                                          /*is_finish=*/false);
+        absl::Status status = original_gl_func();
+        profiling_helper_->MarkTimestamp(node_id, input_timestamp,
+                                          /*is_finish=*/true);
+        return status;
+      };
+    // gl_func = [=] {
+    //   profiling_helper_->MarkTimestamp(node_id, input_timestamp,
+    //                                    /*is_finish=*/false);
+    //   auto status = gl_func();
+    //   profiling_helper_->MarkTimestamp(node_id, input_timestamp,
+    //                                    /*is_finish=*/true);
+    //   return status;
+    }
   if (thread_) {
     bool had_gl_errors = false;
 #ifdef MEDIAPIPE_HAS_GOOGLE_THREAD
@@ -778,7 +803,11 @@ class GlFenceSyncPoint : public GlSyncPoint {
  public:
   explicit GlFenceSyncPoint(const std::shared_ptr<GlContext>& gl_context)
       : GlSyncPoint(gl_context) {
-    gl_context_->Run([this] { sync_.Create(); });
+    // gl_context_->Run([this] { sync_.Create(); });
+    gl_context_->Run(GlStatusFunction([this] { 
+      sync_.Create(); 
+      return absl::OkStatus();
+    }));
   }
 
   ~GlFenceSyncPoint() {
@@ -799,7 +828,11 @@ class GlFenceSyncPoint : public GlSyncPoint {
     }
     // In case a current GL context is not available, we fall back using the
     // captured gl_context_.
-    gl_context_->Run([this] { sync_.Wait(); });
+    // gl_context_->Run([this] { sync_.Wait(); });
+    gl_context_->Run(GlStatusFunction([this] { 
+      sync_.Wait(); 
+      return absl::OkStatus();
+    }));
   }
 
   void WaitOnGpu() override {
@@ -812,7 +845,11 @@ class GlFenceSyncPoint : public GlSyncPoint {
     if (!sync_) return true;
     bool ready = false;
     // TODO: we should not block on the original context if possible.
-    gl_context_->Run([this, &ready] { ready = sync_.IsReady(); });
+    // gl_context_->Run([this, &ready] { ready = sync_.IsReady(); });
+    gl_context_->Run(GlStatusFunction([this, &ready] { 
+      ready = sync_.IsReady(); 
+      return absl::OkStatus();
+    }));
     return ready;
   }
 
@@ -1167,7 +1204,8 @@ void GlContext::SetStandardTextureParams(GLenum target, GLint internal_format) {
   glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 }
 
-const GlContext::Attachment<GLuint> kUtilityFramebuffer(
+// const GlContext::Attachment<GLuint> kUtilityFramebuffer(
+const GlContext::Attachment<GLuint> kUtilityFramebuffer = GlContext::Attachment<GLuint>(
     [](GlContext&) -> GlContext::Attachment<GLuint>::Ptr {
       GLuint framebuffer;
       glGenFramebuffers(1, &framebuffer);

@@ -15,7 +15,13 @@
 #ifndef MEDIAPIPE_GPU_GL_CONTEXT_H_
 #define MEDIAPIPE_GPU_GL_CONTEXT_H_
 
-#include <pthread.h>
+// #include <pthread.h>
+#ifdef _WIN32
+  // #include <Windows.h>
+  #include <thread>
+#else
+  #include <pthread.h>
+#endif
 
 #include <atomic>
 #include <cstdint>
@@ -289,13 +295,25 @@ class GlContext : public std::enable_shared_from_this<GlContext> {
   //
   // Therefore, instead of using std::function<void(void)>, we use a template
   // that only accepts arguments with a void result type.
-  template <typename T, typename = typename std::enable_if<std::is_void<
-                            typename std::result_of<T()>::type>::value>::type>
-  void Run(T f) {
-    Run([f] {
-      f();
-      return absl::OkStatus();
-    }).IgnoreError();
+  // template <typename T, typename = typename std::enable_if<std::is_void< // original
+  //                           typename std::result_of<T()>::type>::value>::type>
+  // template <typename T, typename = typename std::enable_if<std::is_void< // new
+  //                         typename std::invoke_result_t<T()>::type>::value>::type>
+  // void Run(T f) { //original
+  //   Run([f] {
+  //     f();
+  //     return absl::OkStatus();
+  //   }).IgnoreError();
+  // }
+
+  //latest
+  template <typename T, typename = std::enable_if_t<
+              std::is_convertible<T, GlVoidFunction>::value>>
+  void Run(T fn) {
+    Run([fn] { 
+      fn(); 
+      return absl::OkStatus(); 
+    });
   }
 
   // Sets default texture filtering parameters.
@@ -495,7 +513,8 @@ class GlContext : public std::enable_shared_from_this<GlContext> {
 // etc.
 // This could just be a member of GlContext, but it serves as a basic example
 // of an attachment.
-ABSL_CONST_INIT extern const GlContext::Attachment<GLuint> kUtilityFramebuffer;
+//ABSL_CONST_INIT extern const GlContext::Attachment<GLuint> kUtilityFramebuffer; // original using abseil macro which expands to constinit in toolchain
+extern const GlContext::Attachment<GLuint> kUtilityFramebuffer;
 
 // For backward compatibility. TODO: migrate remaining callers.
 ABSL_DEPRECATED(
