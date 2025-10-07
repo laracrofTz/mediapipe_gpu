@@ -1,5 +1,9 @@
 # The bazelrc file for MediaPipe OSS.
 
+startup --output_base=C:/O
+
+common --enable_platform_specific_config
+
 # Tensorflow needs remote repo
 common --experimental_repo_remote_exec
 
@@ -7,13 +11,17 @@ common --experimental_repo_remote_exec
 common --noenable_bzlmod
 
 # Turn off toolchain resolution for cc rules and android rules.
-common --noincompatible_enable_cc_toolchain_resolution
+common --noincompatible_enable_cc_toolchain_resolution 
+# comment this out for default msvc build
+# common --incompatible_enable_cc_toolchain_resolution
 common --noincompatible_enable_android_toolchain_resolution
 
 # Basic build settings
-build --jobs 128
+build --jobs 20 # for parallelism, ini 128, reduce the num of job
 build --define='absl=1'  # for gtest
 build --enable_platform_specific_config
+# build --action_env=PATH="C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.44.35207/bin/Hostx86/x64;${PATH}" # to force it to use 32 bit compiler, this works, but cannot find python3 binary
+# build --repo_env=PYTHON_BIN_PATH="C:/Users/user/miniconda3/envs/mediapipe-windows/python3.exe" # need to create an environment yml file or set the name of env
 
 # Enable stack traces
 test --test_env="GTEST_INSTALL_FAILURE_SIGNAL_HANDLER=1"
@@ -29,12 +37,42 @@ build:linux --copt=-w
 build:linux --define=xnn_enable_avx512amx=false
 
 # windows
-build:windows --cxxopt=/std:c++17
-build:windows --host_cxxopt=/std:c++17
+# copt is for both C and C++ compiles
+# conlyopt to only c compilations
+build:windows --cxxopt=/std:c++20 # initially was both 17, only applies to c++ compiles
+build:windows --host_cxxopt=/std:c++20
+build:windows --cxxopt=/Zc:preprocessor
+build:windows --host_cxxopt=/Zc:preprocessor
 build:windows --copt=/w
 # For using M_* math constants on Windows with MSVC.
 build:windows --copt=/D_USE_MATH_DEFINES
 build:windows --host_copt=/D_USE_MATH_DEFINES
+
+# NEW: make sure EGL path is enabled and Windows macros don’t break templates
+build:windows --define=MEDIAPIPE_DISABLE_GPU=0
+build:windows --copt=/DHAS_EGL=1
+build:windows --host_copt=/DHAS_EGL=1
+build:windows --copt=/DNOMINMAX
+build:windows --host_copt=/DNOMINMAX
+build:windows --copt=/DWIN32_LEAN_AND_MEAN
+build:windows --copt=/DMESA_EGL_NO_X11_HEADERS
+build:windows --copt=/DEGL_NO_X11
+# build:windows --copt=/Iexternal/angle/include
+
+# C flags
+build:windows --conlyopt=/D__STDC_NO_ATOMICS__=1
+build:windows --host_conlyopt=/D__STDC_NO_ATOMICS__=1
+
+# build:windows_clang --config=windows
+# build:windows_clang --incompatible_enable_cc_toolchain_resolution
+# build:windows_clang --platforms=//:x64_windows-clang-cl
+# build:windows_clang --host_platform=//:x64_windows-clang-cl
+# build:windows_clang --extra_toolchains=@local_config_cc//:cc-toolchain-x64_windows-clang-cl
+# comment this out for default msvc build
+# build:windows --platforms=//:x64_windows-clang-cl
+# build:windows --extra_execution_platforms=//:x64_windows-clang-cl
+# build:windows --extra_toolchains=@local_config_cc//:cc-toolchain-x64_windows-clang-cl
+
 
 # macOS
 build:macos --cxxopt=-std=c++17
