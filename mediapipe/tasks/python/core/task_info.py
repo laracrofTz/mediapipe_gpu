@@ -110,15 +110,15 @@ class TaskInfo:
           output_stream=self.output_streams,
       )
 
-      # new profiler setup
-      cfg = config.profiler_config
-      cfg.enable_profiler = True   
-      cfg.trace_enabled = True           
-      cfg.enable_stream_latency = True       
-      cfg.trace_log_path = f"/home/advaitaa/Desktop/realtimehandtracking/gpu_trace/mediapipe_trace_{gpu_device}_{os.getpid()}_"  # TODO: change absolute path
-      cfg.trace_log_count = 3 #200 # rotation
-      cfg.trace_log_interval_usec = 500000 #200000
-      cfg.trace_log_interval_count = 20 #5 
+      # # new profiler setup
+      # cfg = config.profiler_config
+      # cfg.enable_profiler = True   
+      # cfg.trace_enabled = True           
+      # cfg.enable_stream_latency = True       
+      # cfg.trace_log_path = f"/home/advaitaa/Desktop/realtimehandtracking/gpu_trace/mediapipe_trace_{gpu_device}_{os.getpid()}_"  # TODO: change absolute path
+      # cfg.trace_log_count = 3 #200 # rotation
+      # cfg.trace_log_interval_usec = 500000 #200000
+      # cfg.trace_log_interval_count = 20 #5 
 
       return config
     # When a FlowLimiterCalculator is inserted to lower the overall graph
@@ -151,14 +151,14 @@ class TaskInfo:
         output_stream=self.output_streams,
     )
 
-    # setup profiler here (with flow limiting)
-    cfg = config.profiler_config
-    cfg.enable_profiler = True   
-    cfg.trace_enabled = True           
-    cfg.enable_stream_latency = True       
-    cfg.trace_log_path = f"/home/advaitaa/Desktop/realtimehandtracking/gpu_trace/mediapipe_trace_{gpu_device}_{os.getpid()}_" # TODO: change absolute path
-    cfg.trace_log_count = 3 #200 # rotation
-    cfg.trace_log_interval_usec = 500000 #200000
-    cfg.trace_log_interval_count = 20 #5 
+    # # setup profiler here (with flow limiting)
+    # cfg = config.profiler_config
+    # cfg.enable_profiler = True   
+    # cfg.trace_enabled = True           
+    # cfg.enable_stream_latency = True       
+    # cfg.trace_log_path = f"/home/advaitaa/Desktop/realtimehandtracking/gpu_trace/mediapipe_trace_{gpu_device}_{os.getpid()}_" # TODO: change absolute path
+    # cfg.trace_log_count = 3 #200 # rotation
+    # cfg.trace_log_interval_usec = 500000 #200000
+    # cfg.trace_log_interval_count = 20 #5 
 
     return config
