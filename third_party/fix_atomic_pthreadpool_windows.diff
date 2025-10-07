@@ -1,0 +1,240 @@
+diff --git a/src/threadpool-atomics.h b/src/threadpool-atomics.h
+index bd1ab26..01a87f5 100644
+--- a/src/threadpool-atomics.h
++++ b/src/threadpool-atomics.h
+@@ -11,11 +11,16 @@
+ #define __PTHREADPOOL_SRC_THREADPOOL_ATOMICS_H_
+ 
+ /* Standard C headers */
+-#include <stdatomic.h>
++#ifndef __STDC_NO_ATOMICS__
++  #include <stdatomic.h>
++#endif
+ #include <stdbool.h>
+ #include <stddef.h>
+ #include <stdint.h>
+ 
++/* Configuration header */
++#include "threadpool-common.h"
++
+ /* Windows-specific headers */
+ #ifdef _WIN32
+ #ifndef WIN32_LEAN_AND_MEAN
+@@ -40,10 +45,208 @@
+ /* MSVC-specific headers */
+ #ifdef _MSC_VER
+ #include <intrin.h>
++/* MSVC fallback to use windows interlocked api instead of c11 atomics*/
++#include <Windows.h>
++
++/* pthreadpool atomic types*/
++typedef volatile LONG pthreadpool_atomic_uint32_t;
++typedef volatile SIZE_T pthreadpool_atomic_size_t;
++typedef PVOID volatile pthreadpool_atomic_void_p; /* pvoid is void pointer to mem addr with no info about the value type*/
++
++/* load operations*/
++static inline uint32_t pthreadpool_load_relaxed_uint32_t(
++  const pthreadpool_atomic_uint32_t* address) {
++    return (uint32_t)*address;
++}
++
++static inline size_t pthreadpool_load_relaxed_size_t(
++  const pthreadpool_atomic_size_t* address) {
++    return (size_t)*address;
++}
++
++static inline void* pthreadpool_load_relaxed_void_p(
++  const pthreadpool_atomic_void_p* address) {
++    return (void*)*address;
++}
++
++/* load acquired */
++static inline uint32_t pthreadpool_load_acquire_uint32_t(
++   pthreadpool_atomic_uint32_t* address) {
++    return (uint32_t)InterlockedCompareExchange((LONG volatile*)address, 0, 0);
++}
++
++static inline size_t pthreadpool_load_acquire_size_t(
++    pthreadpool_atomic_size_t* address) {
++#ifdef _WIN64
++  return (size_t)InterlockedCompareExchange64((LONGLONG volatile*)address, 0, 0);
++#else
++  return (size_t)InterlockedCompareExchange((LONG volatile*)address, 0, 0);
+ #endif
++}
+ 
+-/* Configuration header */
+-#include "threadpool-common.h"
++/* store */
++static inline void pthreadpool_store_relaxed_uint32_t(
++    pthreadpool_atomic_uint32_t* address, uint32_t value) {
++    InterlockedExchange((LONG volatile*)address, (LONG)value);
++}
++
++static inline void pthreadpool_store_relaxed_size_t(
++    pthreadpool_atomic_size_t* address, size_t value) {
++#ifdef _WIN64
++  InterlockedExchange64((LONGLONG volatile*)address, (LONGLONG)value);
++#else
++  InterlockedExchange((LONG volatile*)address, (LONG)value);
++#endif
++}
++
++static inline void pthreadpool_store_relaxed_void_p(
++    pthreadpool_atomic_void_p* address, void* value) {
++      InterlockedExchangePointer(address, value);
++}
++
++/* store release */
++static inline void pthreadpool_store_release_uint32_t(
++    pthreadpool_atomic_uint32_t* address, uint32_t value) {
++      InterlockedExchange((LONG volatile*)address, (LONG)value);
++}
++
++static inline void pthreadpool_store_release_size_t( 
++  pthreadpool_atomic_size_t* address, size_t value) {
++#ifdef _WIN64
++  InterlockedExchange64((LONGLONG volatile*)address, (LONGLONG)value);
++#else
++  InterlockedExchange((LONG volatile*)address, (LONG)value);
++#endif
++}
++
++/* fetch */
++static inline uint32_t pthreadpool_decrement_fetch_relaxed_uint32_t(
++    pthreadpool_atomic_uint32_t* address) {
++  return (uint32_t)InterlockedDecrement((LONG volatile*)address);
++}
++
++static inline size_t pthreadpool_decrement_fetch_relaxed_size_t(
++  pthreadpool_atomic_size_t* address) {
++#if defined(_WIN64)
++  return (size_t)InterlockedDecrement64((LONGLONG volatile*)address);
++#else
++  return (size_t)InterlockedDecrement((LONG volatile*)address);
++#endif
++}
++
++static inline size_t pthreadpool_fetch_add_relaxed_size_t(
++    pthreadpool_atomic_size_t* address, size_t n) {
++#if defined(_WIN64)
++  return (size_t)InterlockedExchangeAdd64((LONGLONG volatile*)address, (LONGLONG)n);
++#else
++  return (size_t)InterlockedExchangeAdd((LONG volatile*)address, (LONG)n);
++#endif
++}
++
++static inline size_t pthreadpool_fetch_sub_relaxed_size_t(
++    pthreadpool_atomic_size_t* address, size_t n) {
++#if defined(_WIN64)
++  return (size_t)InterlockedExchangeAdd64((LONGLONG volatile*)address, -(LONGLONG)n);
++#else
++  return (size_t)InterlockedExchangeAdd((LONG volatile*)address, -(LONG)n);
++#endif
++}
++
++/* */
++static inline size_t pthreadpool_decrement_fetch_acquire_release_size_t(
++  pthreadpool_atomic_size_t* address) {
++#if defined(_WIN64)
++  return (size_t)InterlockedDecrement64((LONGLONG volatile*)address);
++#else
++  return (size_t)InterlockedDecrement((LONG volatile*)address);
++#endif
++}
++
++static inline void pthreadpool_fence_acquire() {
++  MemoryBarrier(); /* windows barrier intrinsics, does both acquire and release*/
++}
++
++static inline void pthreadpool_fence_release() {
++  MemoryBarrier();
++}
++
++static inline size_t pthreadpool_fetch_decrement_n_relaxed_size_t(
++    pthreadpool_atomic_size_t* address, size_t n) {
++#if defined(_WIN64)
++  return (size_t)InterlockedDecrement64((LONGLONG volatile*)address - (LONGLONG) n);
++#else
++  return (size_t)InterlockedDecrement((LONG volatile*)address - (LONG) n);
++#endif
++}
++
++static inline size_t pthreadpool_decrement_n_fetch_relaxed_size_t(
++    pthreadpool_atomic_size_t* address, size_t n) {
++#if defined(_WIN64)
++  return (size_t)InterlockedDecrement64((LONGLONG volatile*)address - (LONGLONG) n);
++#else
++  return (size_t)InterlockedDecrement((LONG volatile*)address - (LONG) n);
++#endif
++}
++
++static inline bool pthreadpool_try_decrement_relaxed_size_t(
++    pthreadpool_atomic_size_t* value) {
++#if defined(_WIN64)
++  size_t old = (size_t)InterlockedCompareExchange64(
++      (LONGLONG volatile*)value, 0, 0);  // atomic read
++  while (old != 0) {
++    size_t prev = (size_t)InterlockedCompareExchange64(
++        (LONGLONG volatile*)value, (LONGLONG)(old - 1), (LONGLONG)old);
++    if (prev == old) {
++      return true;  // success
++    }
++    old = prev;  // retry with updated value
++  }
++#else
++  size_t old = (size_t)InterlockedCompareExchange(
++      (LONG volatile*)value, 0, 0);  // atomic read
++  while (old != 0) {
++    size_t prev = (size_t)InterlockedCompareExchange(
++        (LONG volatile*)value, (LONG)(old - 1), (LONG)old);
++    if (prev == old) {
++      return true;  // success
++    }
++    old = prev;  // retry with updated value
++  }
++#endif
++  return false;
++}
++
++static inline void pthreadpool_yield(uint32_t step) {
++  if (step < PTHREADPOOL_SPIN_PAUSE_ITERATIONS) {
++#if defined(__ARM_ACLE) || \
++    defined(_MSC_VER) &&   \
++        (defined(_M_ARM) || defined(_M_ARM64) || defined(_M_ARM64EC))
++    __yield();
++#elif defined(__GNUC__) &&                                      \
++    (defined(__ARM_ARCH) && (__ARM_ARCH >= 7) ||                \
++     (defined(__ARM_ARCH_6K__) || defined(__ARM_ARCH_6KZ__)) && \
++         !defined(__thumb__))
++    __asm__ __volatile__("yield");
++#elif defined(__i386__) || defined(__i686__) || defined(__x86_64__) || \
++    defined(_M_IX86) || defined(_M_X64)
++    _mm_pause();
++#else
++    pthreadpool_fence_acquire();
++#endif
++  } else {
++#ifdef _WIN32
++    Sleep(0);
++#else
++    sched_yield();
++#endif
++  }
++}
++
++#else
++#include <stdatomic.h>
++
++// /* Configuration header */
++// #include "threadpool-common.h"
+ 
+ /* Align the atomic values on the size of a cache line to avoid false sharing,
+  * i.e. two or more atomic variables sharing the same cache line will block
+@@ -181,5 +384,5 @@ static inline void pthreadpool_yield(uint32_t step) {
+ #endif
+   }
+ }
+-
++#endif /* _MSC_VER */
+ #endif  // __PTHREADPOOL_SRC_THREADPOOL_ATOMICS_H_
