@@ -42,6 +42,17 @@
 #include "tensorflow/lite/delegates/gpu/gl_delegate.h"
 #include "tensorflow/lite/interpreter.h"
 
+template <class C, class F>
+absl::Status RunAndGetStatus(C* ctx, F&& f) {
+  if constexpr (std::is_same_v<decltype(ctx->Run(std::forward<F>(f))),
+                               absl::Status>) {
+    return ctx->Run(std::forward<F>(f));
+  } else {
+    ctx->Run(std::forward<F>(f));
+    return absl::OkStatus();
+  }
+}
+
 namespace mediapipe {
 namespace api2 {
 
@@ -156,10 +167,13 @@ absl::Status InferenceCalculatorGlImpl::GpuInferenceRunner::Init(
         << "for Gpu (non advanced)";
     delegate_options.MergeFrom(input_side_packet_delegate);
   }
-  return init_gl_context_->Run(
-      [this, &cc, &delegate_options]() -> absl::Status {
-        return LoadDelegateAndAllocateTensors(cc, delegate_options);
-      });
+  // return init_gl_context_->Run(
+  //     [this, &cc, &delegate_options]() -> absl::Status {
+  //       return LoadDelegateAndAllocateTensors(cc, delegate_options);
+  //     });
+
+  return RunAndGetStatus(init_gl_context_.get(),
+    [this, &cc, &delegate_options]() { return LoadDelegateAndAllocateTensors(cc, delegate_options); });
 }
 
 absl::Status InferenceCalculatorGlImpl::GpuInferenceRunner::LoadModel(

@@ -27,6 +27,10 @@
 #include "mediapipe/framework/memory_manager.h"
 #include "mediapipe/framework/memory_manager_service.h"
 
+#ifdef GetObject
+#undef GetObject
+#endif
+
 namespace mediapipe {
 namespace api2 {
 

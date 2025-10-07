@@ -40,6 +40,10 @@
 #include "mediapipe/gpu/gpu_origin_utils.h"
 #include "mediapipe/gpu/webgpu/webgpu_check.h"
 
+#ifdef GetObject
+#undef GetObject
+#endif
+
 #if !MEDIAPIPE_DISABLE_OPENCV
 #include "mediapipe/calculators/tensor/image_to_tensor_converter_opencv.h"
 #elif MEDIAPIPE_ENABLE_HALIDE

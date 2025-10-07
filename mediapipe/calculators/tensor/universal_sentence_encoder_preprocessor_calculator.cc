@@ -31,6 +31,10 @@
 #include "mediapipe/tasks/cc/core/utils.h"
 #include "mediapipe/tasks/cc/metadata/metadata_extractor.h"
 
+#ifdef GetObject
+#undef GetObject
+#endif
+
 namespace mediapipe {
 namespace api2 {
 

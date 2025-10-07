@@ -41,6 +41,10 @@
 #include "mediapipe/util/time_series_util.h"
 #include "pffft.h"
 
+#ifdef GetObject
+#undef GetObject
+#endif
+
 namespace mediapipe {
 namespace api2 {
 namespace {

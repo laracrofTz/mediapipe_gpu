@@ -39,6 +39,10 @@
 #include "mediapipe/tasks/cc/text/tokenizers/tokenizer_utils.h"
 #include "mediapipe/tasks/metadata/metadata_schema_generated.h"
 
+#ifdef GetObject
+#undef GetObject
+#endif
+
 namespace mediapipe {
 namespace api2 {
 

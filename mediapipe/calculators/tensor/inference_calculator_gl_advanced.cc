@@ -38,6 +38,21 @@
 #include "mediapipe/util/tflite/tflite_gpu_runner.h"
 #include "mediapipe/util/tflite/tflite_model_loader.h"
 
+#ifdef GetObject
+#undef GetObject
+#endif
+
+template <class C, class F>
+absl::Status RunAndGetStatus(C* ctx, F&& f) {
+  if constexpr (std::is_same_v<decltype(ctx->Run(std::forward<F>(f))),
+                               absl::Status>) {
+    return ctx->Run(std::forward<F>(f));
+  } else {
+    ctx->Run(std::forward<F>(f));
+    return absl::OkStatus();
+  }
+}
+
 namespace mediapipe {
 namespace api2 {
 
@@ -105,11 +120,16 @@ class InferenceCalculatorGlAdvancedImpl
 };
 
 InferenceCalculatorGlAdvancedImpl::GpuInferenceRunner::~GpuInferenceRunner() {
-  const auto success =
-      initialization_gl_context_->Run([this]() -> absl::Status {
-        tflite_gpu_runner_.reset();
-        return absl::OkStatus();
-      });
+  // const auto success =
+  //     initialization_gl_context_->Run([this]() -> absl::Status {
+  //       tflite_gpu_runner_.reset();
+  //       return absl::OkStatus();
+  //     });
+  const absl::Status success = RunAndGetStatus(initialization_gl_context_.get(), 
+    [this]() -> absl::Status {
+      tflite_gpu_runner_.reset();
+      return absl::OkStatus();
+    });
   if (!success.ok()) {
     ABSL_LOG(DFATAL) << "Failed to close gpu inference runner: " << success;
   }
@@ -135,10 +155,14 @@ absl::Status InferenceCalculatorGlAdvancedImpl::GpuInferenceRunner::Init(
 
   MP_RETURN_IF_ERROR(on_disk_cache_helper_.Init(options, delegate.gpu()));
 
-  return initialization_gl_context_->Run(
-      [this, &cc, &delegate]() -> absl::Status {
-        return InitTFLiteGPURunner(cc, delegate);
-      });
+  // return initialization_gl_context_->Run(
+  //     [this, &cc, &delegate]() -> absl::Status {
+  //       return InitTFLiteGPURunner(cc, delegate);
+  //     });
+  return RunAndGetStatus(initialization_gl_context_.get(), 
+    [this, &cc, &delegate]() -> absl::Status {
+      return InitTFLiteGPURunner(cc, delegate);
+    });
 }
 
 absl::StatusOr<std::vector<Tensor>>

@@ -687,12 +687,13 @@ absl::Status TensorsToDetectionsCalculator::ProcessGPU(
 absl::Status TensorsToDetectionsCalculator::Close(CalculatorContext* cc) {
 #ifndef MEDIAPIPE_DISABLE_GL_COMPUTE
   if (gpu_inited_) {
-    gpu_helper_.RunInGlContext([this] {
+    gpu_helper_.RunInGlContext([this] -> absl::Status {
       decoded_boxes_buffer_ = nullptr;
       scored_boxes_buffer_ = nullptr;
       raw_anchors_buffer_ = nullptr;
       glDeleteProgram(decode_program_);
       glDeleteProgram(score_program_);
+      return absl::OkStatus();
     });
   }
 #elif MEDIAPIPE_METAL_ENABLED

@@ -319,10 +319,11 @@ class ImageToTensorGlBufferConverter : public ImageToTensorConverter {
   }
 
   ~ImageToTensorGlBufferConverter() override {
-    gl_helper_.RunInGlContext([this]() {
+    gl_helper_.RunInGlContext([this]() -> absl::Status {
       // Release OpenGL resources.
       extractor_ = nullptr;
       command_queue_ = nullptr;
+      return absl::OkStatus();
     });
   }
 

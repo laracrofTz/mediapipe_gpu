@@ -106,7 +106,12 @@ class ImageCloneCalculator : public Node {
         MP_RETURN_IF_ERROR(gpu_helper_.Open(cc));
         gpu_initialized_ = true;
       }
-      gpu_helper_.RunInGlContext([&output]() { output->ConvertToGpu(); });
+      // gpu_helper_.RunInGlContext([&output]() { output->ConvertToGpu(); });
+      // change here since we return absl::Status from RunInGlContext
+      gpu_helper_.RunInGlContext([&output]() -> absl::Status { 
+        output->ConvertToGpu();
+        return absl::OkStatus();
+      });
 #endif  // !MEDIAPIPE_DISABLE_GPU
     } else if (!output_on_gpu_ && input_on_gpu) {
       output->ConvertToCpu();

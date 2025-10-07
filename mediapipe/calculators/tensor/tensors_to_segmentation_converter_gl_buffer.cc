@@ -84,11 +84,12 @@ class TensorsToSegmentationGlBufferConverter
 TensorsToSegmentationGlBufferConverter::
     ~TensorsToSegmentationGlBufferConverter() {
   if (gpu_initialized_) {
-    gpu_helper_.RunInGlContext([this] {
+    gpu_helper_.RunInGlContext([this] -> absl::Status {
       if (upsample_program_) glDeleteProgram(upsample_program_);
       upsample_program_ = 0;
       mask_program_31_.reset();
       small_mask_texture_.reset();
+      return absl::OkStatus();
     });
   }
 }

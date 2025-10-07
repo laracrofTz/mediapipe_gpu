@@ -368,25 +368,43 @@ absl::Status TensorConverterCalculator::InitGpu(CalculatorContext* cc) {
                                  include_alpha, single_channel,
                                  flip_vertically_, max_num_channels_));
 #elif MEDIAPIPE_OPENGL_ES_VERSION >= MEDIAPIPE_OPENGL_ES_30
-  MP_RETURN_IF_ERROR(gpu_helper_.RunInGlContext(
-      [this, &input, &include_alpha, &single_channel]() -> absl::Status {
+  // preprocessor directive inside macro/lambda fix:
 #if MEDIAPIPE_OPENGL_ES_VERSION >= MEDIAPIPE_OPENGL_ES_31
-        MP_ASSIGN_OR_RETURN(
-            tensor_converter_gpu_,
-            CreateTensorConverterGl31(
-                gpu_helper_, memory_manager_, input.width(), input.height(),
-                output_range_, include_alpha, single_channel, flip_vertically_,
-                max_num_channels_));
+  auto create_fn = CreateTensorConverterGl31;
 #else
-        MP_ASSIGN_OR_RETURN(
-            tensor_converter_gpu_,
-            CreateTensorConverterGl30(
-                gpu_helper_, memory_manager_, input.width(), input.height(),
-                output_range_, include_alpha, single_channel, flip_vertically_,
-                max_num_channels_));
-#endif  // MEDIAPIPE_OPENGL_ES_VERSION >= MEDIAPIPE_OPENGL_ES_31
-        return absl::OkStatus();
-      }));
+  auto create_fn = CreateTensorConverterGl30;
+#endif // end if MEDIAPIPE_OPENGL_ES_VERSION >= MEDIAPIPE_OPENGL_ES_3
+
+  MP_RETURN_IF_ERROR(gpu_helper_.RunInGlContext(
+    [this, &input, &include_alpha, &single_channel, create_fn]() -> absl::Status {
+      MP_ASSIGN_OR_RETURN(
+        tensor_converter_gpu_,
+        create_fn(
+            gpu_helper_, memory_manager_, input.width(), input.height(),
+            output_range_, include_alpha, single_channel, flip_vertically_,
+            max_num_channels_));
+      return absl::OkStatus();
+    }));
+
+//   MP_RETURN_IF_ERROR(gpu_helper_.RunInGlContext(
+//       [this, &input, &include_alpha, &single_channel]() -> absl::Status {
+// #if MEDIAPIPE_OPENGL_ES_VERSION >= MEDIAPIPE_OPENGL_ES_31
+//         MP_ASSIGN_OR_RETURN(
+//             tensor_converter_gpu_,
+//             CreateTensorConverterGl31(
+//                 gpu_helper_, memory_manager_, input.width(), input.height(),
+//                 output_range_, include_alpha, single_channel, flip_vertically_,
+//                 max_num_channels_));
+// #else
+//         MP_ASSIGN_OR_RETURN(
+//             tensor_converter_gpu_,
+//             CreateTensorConverterGl30(
+//                 gpu_helper_, memory_manager_, input.width(), input.height(),
+//                 output_range_, include_alpha, single_channel, flip_vertically_,
+//                 max_num_channels_));
+// #endif  // MEDIAPIPE_OPENGL_ES_VERSION >= MEDIAPIPE_OPENGL_ES_31
+      //   return absl::OkStatus();
+      // }));
 #endif  // MEDIAPIPE_OPENGL_ES_VERSION >= MEDIAPIPE_OPENGL_ES_30
 #endif  // !MEDIAPIPE_DISABLE_GPU
   return absl::OkStatus();
